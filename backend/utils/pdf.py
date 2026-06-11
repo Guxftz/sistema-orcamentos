@@ -58,36 +58,45 @@ def gerar_pdf_orcamento(
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_png = None
+    logo_jpeg = None
     if logo_base64:
+        import sys
         try:
             from PIL import Image as PilImage
-            from reportlab.lib.utils import ImageReader
             raw = base64.b64decode(logo_base64)
-            pil_img = PilImage.open(io.BytesIO(raw)).convert("RGBA")
-            png_buf = io.BytesIO()
-            pil_img.save(png_buf, format="PNG")
-            png_buf.seek(0)
-            logo_png = png_buf.read()
-        except Exception:
-            logo_png = None
+            img = PilImage.open(io.BytesIO(raw))
+            img.load()
+            if img.mode in ("RGBA", "LA", "P"):
+                bg = PilImage.new("RGB", img.size, (255, 255, 255))
+                alpha = img.convert("RGBA").split()[3]
+                bg.paste(img.convert("RGB"), mask=alpha)
+                img = bg
+            else:
+                img = img.convert("RGB")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=95)
+            logo_jpeg = buf.getvalue()
+        except Exception as e:
+            print(f"[PDF] logo prep error: {type(e).__name__}: {e}", file=sys.stderr)
+            logo_jpeg = None
 
     def desenhar_cabecalho(completo=True):
         topo = altura - 20 * mm
 
-        if logo_png:
+        if logo_jpeg:
+            import sys
             try:
                 from reportlab.lib.utils import ImageReader
-                logo_img = ImageReader(io.BytesIO(logo_png))
+                logo_img = ImageReader(io.BytesIO(logo_jpeg))
                 logo_larg = 70 * mm
                 logo_alt = 30 * mm
                 x_logo = 20 * mm
                 y_logo = topo - logo_alt + 12 * mm
                 c.drawImage(logo_img, x_logo, y_logo,
                             width=logo_larg, height=logo_alt,
-                            preserveAspectRatio=True, mask="auto")
-            except Exception:
-                pass
+                            preserveAspectRatio=True)
+            except Exception as e:
+                print(f"[PDF] logo draw error: {type(e).__name__}: {e}", file=sys.stderr)
 
         x_txt = 95 * mm
         y_txt = topo + 3 * mm
@@ -115,7 +124,13 @@ def gerar_pdf_orcamento(
             y -= 10 * mm
 
             try:
-                num_orc = f"{int(numero_orcamento):03d}"
+                num_val = int(numero_orcamento)
+                year = datetime.now().year
+                # números antigos (sem ano sufixo) têm menos de 5 dígitos
+                if num_val < 10000:
+                    num_orc = f"{num_val}{year}"
+                else:
+                    num_orc = str(num_val)
             except Exception:
                 num_orc = str(numero_orcamento)
 
@@ -377,31 +392,41 @@ def gerar_pdf_montador(nome_cliente, data_orcamento, itens, total_geral, logo_ba
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_png_m = None
+    logo_jpeg_m = None
     if logo_base64:
+        import sys
         try:
             from PIL import Image as PilImage
             raw_m = base64.b64decode(logo_base64)
-            pil_m = PilImage.open(io.BytesIO(raw_m)).convert("RGBA")
+            img_m = PilImage.open(io.BytesIO(raw_m))
+            img_m.load()
+            if img_m.mode in ("RGBA", "LA", "P"):
+                bg_m = PilImage.new("RGB", img_m.size, (255, 255, 255))
+                alpha_m = img_m.convert("RGBA").split()[3]
+                bg_m.paste(img_m.convert("RGB"), mask=alpha_m)
+                img_m = bg_m
+            else:
+                img_m = img_m.convert("RGB")
             buf_m = io.BytesIO()
-            pil_m.save(buf_m, format="PNG")
-            buf_m.seek(0)
-            logo_png_m = buf_m.read()
-        except Exception:
-            logo_png_m = None
+            img_m.save(buf_m, format="JPEG", quality=95)
+            logo_jpeg_m = buf_m.getvalue()
+        except Exception as e:
+            print(f"[PDF-M] logo prep error: {type(e).__name__}: {e}", file=sys.stderr)
+            logo_jpeg_m = None
 
     def cabecalho():
         y = altura - 15 * mm
-        if logo_png_m:
+        if logo_jpeg_m:
+            import sys
             try:
                 from reportlab.lib.utils import ImageReader
-                logo_img = ImageReader(io.BytesIO(logo_png_m))
+                logo_img = ImageReader(io.BytesIO(logo_jpeg_m))
                 c.drawImage(logo_img, 15 * mm, y - 18 * mm,
                             width=40 * mm, height=18 * mm,
-                            preserveAspectRatio=True, mask="auto")
+                            preserveAspectRatio=True)
                 y -= 22 * mm
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[PDF-M] logo draw error: {type(e).__name__}: {e}", file=sys.stderr)
         c.setFont("Helvetica-Bold", 11)
         c.drawString(15 * mm, y, "MARMORARIA EBENEZER MARMORES E GRANITOS")
         y -= 5 * mm
