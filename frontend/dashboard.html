@@ -126,6 +126,8 @@
 <script>
   requireAuth();
   document.getElementById("sidebarUser").textContent = getUsername();
+  // marcador de versão — remove após confirmar que o novo código carregou
+  document.getElementById("tabelaOrc").innerHTML = '<tr><td colspan="6" class="text-center text-info py-2">v7 — aguardando dados...</td></tr>';
 
   let todosOrc = [];
   let excluirId = null;
