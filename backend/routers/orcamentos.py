@@ -35,6 +35,7 @@ class OrcamentoCreate(BaseModel):
     data: str
     cliente: str
     endereco: Optional[str] = ""
+    cidade: Optional[str] = ""
     forma_pagamento: Optional[str] = "A definir"
     mostrar_nota: Optional[bool] = True
     rt_pct: Optional[float] = 0
@@ -82,9 +83,9 @@ def criar_orcamento(body: OrcamentoCreate, user=Depends(get_current_user)):
         total = sum(i.total for i in body.itens)
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO orcamentos (numero, data, cliente, endereco, total, forma_pagamento, mostrar_nota, rt_pct, itens_json)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING id
-        """, (numero, body.data, body.cliente, body.endereco, total,
+            INSERT INTO orcamentos (numero, data, cliente, endereco, cidade, total, forma_pagamento, mostrar_nota, rt_pct, itens_json)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING id
+        """, (numero, body.data, body.cliente, body.endereco, body.cidade, total,
               body.forma_pagamento, body.mostrar_nota, body.rt_pct, itens_json))
         row = cur.fetchone()
         conn.commit()
@@ -112,10 +113,10 @@ def atualizar_orcamento(orc_id: int, body: OrcamentoCreate, user=Depends(get_cur
         total = sum(i.total for i in body.itens)
         cur = conn.cursor()
         cur.execute("""
-            UPDATE orcamentos SET data=%s, cliente=%s, endereco=%s, total=%s,
+            UPDATE orcamentos SET data=%s, cliente=%s, endereco=%s, cidade=%s, total=%s,
             forma_pagamento=%s, mostrar_nota=%s, rt_pct=%s, itens_json=%s::jsonb
             WHERE id=%s
-        """, (body.data, body.cliente, body.endereco, total,
+        """, (body.data, body.cliente, body.endereco, body.cidade, total,
               body.forma_pagamento, body.mostrar_nota, body.rt_pct, itens_json, orc_id))
         conn.commit()
     return {"ok": True}

@@ -132,6 +132,9 @@ def init_db():
             ON CONFLICT (id) DO NOTHING
         """)
 
+        cur.execute("ALTER TABLE orcamentos ADD COLUMN IF NOT EXISTS cidade TEXT DEFAULT ''")
+        cur.execute("ALTER TABLE servicos ADD COLUMN IF NOT EXISTS precos_cidade JSONB")
+
         defaults = [
             ("empresa", "EBZ Mármores"),
             ("whatsapp_template", "Olá, {cliente}! Tudo bem? Aqui é da {empresa}. Estou entrando em contato sobre a cobrança '{descricao}' no valor de {valor}. Data de referência: {vencimento}."),

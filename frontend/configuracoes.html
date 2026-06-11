@@ -30,6 +30,14 @@
           <h6>Configurações Gerais</h6>
           <div class="mb-3"><label class="form-label">Nome da Empresa</label><input type="text" id="cfEmpresa" class="form-control"></div>
           <div class="mb-3"><label class="form-label">RT Padrão (%)</label><input type="number" id="cfRt" class="form-control" step="0.5" min="0" max="100"></div>
+          <div class="mb-3">
+            <label class="form-label">Número inicial do orçamento</label>
+            <div class="input-group">
+              <input type="number" id="cfNumeroInicial" class="form-control" min="1" placeholder="Ex: 1">
+              <span class="input-group-text text-muted" id="proximoNumeroInfo" style="font-size:.82rem"></span>
+            </div>
+            <small class="text-muted">Define a partir de qual número os novos orçamentos serão numerados.</small>
+          </div>
           <div class="mb-3 form-check">
             <input type="checkbox" id="cfOcultar" class="form-check-input">
             <label for="cfOcultar" class="form-check-label">Ocultar valor dos itens no PDF</label>
@@ -41,6 +49,10 @@
         <div class="form-section">
           <h6>Logo da Empresa</h6>
           <p class="text-muted" style="font-size:.85rem">A logo aparece no cabeçalho dos PDFs gerados.</p>
+          <div id="logoPreviewBox" class="mb-3 d-none text-center p-2 border rounded" style="background:#f8f9fa">
+            <img id="logoPreview" src="" alt="Logo atual" style="max-height:80px;max-width:100%">
+            <div class="text-muted mt-1" style="font-size:.78rem">Logo atual salva</div>
+          </div>
           <input type="file" id="logoInput" class="form-control mb-3" accept="image/*">
           <button class="btn btn-outline-primary" onclick="uploadLogo()">📤 Enviar Logo</button>
         </div>
@@ -51,6 +63,13 @@
           <div class="mb-3"><label class="form-label">Nova Senha</label><input type="password" id="novaSenha" class="form-control" placeholder="Mínimo 6 caracteres"></div>
           <div class="mb-3"><label class="form-label">Confirmar Senha</label><input type="password" id="confirmSenha" class="form-control"></div>
           <button class="btn btn-outline-danger" onclick="alterarSenha()">🔒 Alterar Senha</button>
+        </div>
+
+        <!-- Importar dados padrão -->
+        <div class="form-section">
+          <h6>Importar Dados Padrão</h6>
+          <p class="text-muted" style="font-size:.85rem">Importa todos os materiais e serviços do sistema anterior (incluindo preços SP).</p>
+          <button class="btn btn-outline-secondary" onclick="importarDados()">📥 Importar Materiais e Serviços</button>
         </div>
       </div>
 
@@ -90,14 +109,16 @@
         <div class="form-section">
           <h6>Serviços Pré-definidos</h6>
           <div class="row g-2 mb-3">
-            <div class="col-5"><input type="text" id="srvNome" class="form-control" placeholder="Nome do serviço"></div>
-            <div class="col-3"><select id="srvTipo" class="form-select"><option value="fixo">Fixo</option><option value="ml">ML</option></select></div>
-            <div class="col-2"><input type="number" id="srvPreco" class="form-control" placeholder="Preço" step="0.01"></div>
+            <div class="col-4"><input type="text" id="srvNome" class="form-control" placeholder="Nome do serviço"></div>
+            <div class="col-2"><select id="srvTipo" class="form-select"><option value="fixo">Fixo</option><option value="ml">ML</option></select></div>
+            <div class="col-2"><input type="number" id="srvPreco" class="form-control" placeholder="Preço" step="0.01" title="Preço padrão (Indaiatuba)"></div>
+            <div class="col-2"><input type="number" id="srvPrecoSP" class="form-control" placeholder="Preço SP" step="0.01" title="Preço São Paulo (deixe vazio se igual)"></div>
             <div class="col-2"><button class="btn btn-success w-100" onclick="salvarServico()">+</button></div>
           </div>
-          <div style="max-height:160px;overflow-y:auto">
+          <small class="text-muted d-block mb-2">Preço = valor padrão | Preço SP = valor para obras em São Paulo</small>
+          <div style="max-height:200px;overflow-y:auto">
             <table class="table table-sm mb-0">
-              <thead><tr><th>Serviço</th><th>Tipo</th><th class="text-end">Preço</th><th></th></tr></thead>
+              <thead><tr><th>Serviço</th><th>Tipo</th><th class="text-end">Padrão</th><th class="text-end">SP</th><th></th></tr></thead>
               <tbody id="tbServicos"></tbody>
             </table>
           </div>
@@ -128,7 +149,15 @@ async function carregar() {
   document.getElementById("cfEmpresa").value = cfg.empresa || cfg.company_name || "";
   document.getElementById("cfRt").value = cfg.rt_padrao || "0";
   document.getElementById("cfOcultar").checked = cfg.ocultar_valor_itens_pdf === "true";
+  document.getElementById("cfNumeroInicial").value = cfg.proximo_numero || 1;
+  document.getElementById("proximoNumeroInfo").textContent = `Próximo: #${cfg.proximo_numero || 1}`;
   localStorage.setItem("empresa", cfg.empresa || cfg.company_name || "EBZ Mármores");
+
+  // Logo preview
+  if (cfg.logo_base64) {
+    document.getElementById("logoPreview").src = `data:image/png;base64,${cfg.logo_base64}`;
+    document.getElementById("logoPreviewBox").classList.remove("d-none");
+  }
 
   // Materiais
   const tbM = document.getElementById("tbMateriais");
@@ -153,23 +182,28 @@ async function carregar() {
   const tbS = document.getElementById("tbServicos");
   tbS.innerHTML = "";
   (srvs||[]).forEach(s => {
+    const precoSP = s.precos_cidade ? (s.precos_cidade["São Paulo"] || "-") : "-";
+    const precoSPFmt = precoSP !== "-" ? formatBRL(precoSP) : "-";
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(s.preco)}</td>
+    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(s.preco)}</td><td class="text-end">${precoSPFmt}</td>
       <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirServico(${s.id})">✕</button></td>`;
     tbS.appendChild(tr);
   });
 }
 
 async function salvarConfig() {
+  const numeroInicial = document.getElementById("cfNumeroInicial").value;
   try {
     await apiFetch("/settings",{method:"PUT",body:JSON.stringify({
       empresa: document.getElementById("cfEmpresa").value,
       company_name: document.getElementById("cfEmpresa").value,
       rt_padrao: document.getElementById("cfRt").value,
       ocultar_valor_itens_pdf: document.getElementById("cfOcultar").checked,
+      numero_inicial_orc: numeroInicial || null,
     })});
     localStorage.setItem("empresa", document.getElementById("cfEmpresa").value);
     showToast("Configurações salvas!");
+    carregar();
   } catch(e){ showToast(e.message,"error"); }
 }
 
@@ -183,8 +217,16 @@ async function uploadLogo() {
     const res = await fetch(`${API_URL}/settings/logo`, {
       method:"POST", headers:{Authorization:`Bearer ${token}`}, body:fd
     });
-    if (!res.ok) throw new Error("Erro ao enviar logo");
-    showToast("Logo enviada!");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Erro ao enviar logo");
+    showToast(`Logo enviada! (${(data.size/1024).toFixed(1)} KB)`);
+    // Mostra preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById("logoPreview").src = e.target.result;
+      document.getElementById("logoPreviewBox").classList.remove("d-none");
+    };
+    reader.readAsDataURL(file);
   } catch(e){ showToast(e.message,"error"); }
 }
 
@@ -197,6 +239,15 @@ async function alterarSenha() {
     await apiFetch("/auth/change-password",{method:"POST",body:JSON.stringify({username:getUsername(),new_password:n})});
     showToast("Senha alterada! Faça login novamente.");
     setTimeout(()=>logout(),2000);
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function importarDados() {
+  if (!confirm("Isso vai importar todos os materiais e serviços padrão. Continuar?")) return;
+  try {
+    const r = await apiFetch("/seed", {method:"POST"});
+    showToast(`Importado! ${r.materiais} materiais e ${r.servicos} serviços.`);
+    carregar();
   } catch(e){ showToast(e.message,"error"); }
 }
 
@@ -238,11 +289,16 @@ async function salvarServico() {
   const nome = document.getElementById("srvNome").value.trim().toUpperCase();
   const tipo = document.getElementById("srvTipo").value;
   const preco = parseFloat(document.getElementById("srvPreco").value)||0;
+  const precoSpVal = document.getElementById("srvPrecoSP").value;
+  const preco_sp = precoSpVal !== "" ? parseFloat(precoSpVal) : null;
   if (!nome) { showToast("Informe o nome","warning"); return; }
   try {
-    await apiFetch("/servicos",{method:"POST",body:JSON.stringify({nome,tipo,preco})});
+    const body = {nome, tipo, preco};
+    if (preco_sp !== null) body.preco_sp = preco_sp;
+    await apiFetch("/servicos",{method:"POST",body:JSON.stringify(body)});
     document.getElementById("srvNome").value="";
     document.getElementById("srvPreco").value="";
+    document.getElementById("srvPrecoSP").value="";
     showToast("Serviço salvo!"); carregar();
   } catch(e){ showToast(e.message,"error"); }
 }

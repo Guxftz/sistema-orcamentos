@@ -72,9 +72,16 @@
             <label class="form-check-label" for="inMostrarNota" style="font-size:.82rem">Mostrar valor c/ nota (8%)</label>
           </div>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-10">
           <label class="form-label">Endereço da Obra</label>
           <input type="text" id="inEndereco" class="form-control" placeholder="Endereço completo da obra">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Cidade</label>
+          <select id="inCidade" class="form-select">
+            <option value="">Indaiatuba</option>
+            <option value="São Paulo">São Paulo</option>
+          </select>
         </div>
       </div>
     </div>
@@ -285,6 +292,7 @@ async function carregarOrcamento(id) {
     document.getElementById("inCliente").value = data.cliente || "";
     document.getElementById("inData").value = data.data || "";
     document.getElementById("inEndereco").value = data.endereco || "";
+    document.getElementById("inCidade").value = data.cidade || "";
     document.getElementById("inMostrarNota").checked = data.mostrar_nota !== false;
     document.getElementById("rtPct").value = data.rt_pct || 0;
 
@@ -573,6 +581,7 @@ async function salvarOrcamento() {
     cliente,
     data,
     endereco: document.getElementById("inEndereco").value.trim(),
+    cidade: document.getElementById("inCidade").value || "",
     forma_pagamento: document.getElementById("inPagamento").value,
     mostrar_nota: document.getElementById("inMostrarNota").checked,
     rt_pct: parseFloat(document.getElementById("rtPct").value) || 0,
@@ -672,22 +681,35 @@ document.getElementById("filtroMaterial").addEventListener("input", function() {
 });
 
 // Modal Serviços
+function obterPrecoServico(s) {
+  const cidade = document.getElementById("inCidade").value;
+  if (cidade && s.precos_cidade && s.precos_cidade[cidade] !== undefined) {
+    return parseFloat(s.precos_cidade[cidade]);
+  }
+  if (s.precos_cidade && s.precos_cidade["default"] !== undefined) {
+    return parseFloat(s.precos_cidade["default"]);
+  }
+  return parseFloat(s.preco) || 0;
+}
+
 function abrirModalServicos() {
+  const cidade = document.getElementById("inCidade").value || "Indaiatuba";
   const tbody = document.getElementById("bodyServicos");
   tbody.innerHTML = "";
   servicos.forEach(s => {
+    const preco = obterPrecoServico(s);
     const tr = document.createElement("tr");
     tr.style.cursor = "pointer";
-    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(s.preco)}</td>`;
+    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(preco)} <small class="text-muted">(${cidade})</small></td>`;
     tr.addEventListener("click", () => {
       document.getElementById("inDescricao").value = s.nome;
       document.getElementById("inMaterial").value = "-";
       document.getElementById("inQtd").value = "1";
       if (s.tipo === "ml") {
-        document.getElementById("inPrecoMl").value = s.preco;
+        document.getElementById("inPrecoMl").value = preco;
         document.getElementById("inValorFixo").value = "";
       } else {
-        document.getElementById("inValorFixo").value = s.preco;
+        document.getElementById("inValorFixo").value = preco;
         document.getElementById("inPrecoMl").value = "";
       }
       calcularTotal();
