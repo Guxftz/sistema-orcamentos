@@ -149,6 +149,8 @@ class SettingsUpdate(BaseModel):
 
 @router.get("/settings")
 def obter_settings(user=Depends(get_current_user)):
+    from datetime import datetime
+    year = datetime.now().year
     with get_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT key, value FROM settings")
@@ -156,7 +158,8 @@ def obter_settings(user=Depends(get_current_user)):
         cur.execute("SELECT ultimo_numero FROM orc_sequence WHERE id = 1")
         seq = cur.fetchone()
     result = {r["key"]: r["value"] for r in rows}
-    result["proximo_numero"] = (seq["ultimo_numero"] + 1) if seq else 1
+    seq_num = (seq["ultimo_numero"] + 1) if seq else 1
+    result["proximo_numero"] = int(f"{seq_num}{year}")
     return result
 
 
@@ -174,7 +177,13 @@ def salvar_settings(body: SettingsUpdate, user=Depends(get_current_user)):
                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
             """, (key, str(value)))
         if numero_inicial is not None:
-            n = max(0, int(numero_inicial) - 1)
+            from datetime import datetime
+            year_str = str(datetime.now().year)
+            n_str = str(int(numero_inicial))
+            # Se entrou o número completo (ex: 3022026), extrai só o prefixo (302)
+            if n_str.endswith(year_str) and len(n_str) > len(year_str):
+                n_str = n_str[:-len(year_str)]
+            n = max(0, int(n_str) - 1)
             cur.execute("UPDATE orc_sequence SET ultimo_numero = %s WHERE id = 1", (n,))
         conn.commit()
     return {"ok": True}

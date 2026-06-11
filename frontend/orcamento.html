@@ -182,9 +182,27 @@
           <tbody id="itensBody"></tbody>
         </table>
       </div>
+      <div class="px-3 pb-2 pt-1" style="border-top:1px solid #eee">
+        <div class="row g-2 align-items-center">
+          <div class="col-auto"><span class="fw-bold" style="font-size:.9rem">Desconto:</span></div>
+          <div class="col-auto">
+            <select id="descontoTipo" class="form-select form-select-sm" style="width:auto" onchange="toggleDesconto(); recalcularTotal()">
+              <option value="">Sem desconto</option>
+              <option value="pct">% Percentual</option>
+              <option value="fixo">R$ Valor fixo</option>
+            </select>
+          </div>
+          <div class="col-auto" id="descontoBox" style="display:none">
+            <input type="number" id="descontoValor" class="form-control form-control-sm" style="width:110px" step="0.01" min="0" placeholder="0" oninput="recalcularTotal()">
+          </div>
+          <div class="col-auto" id="descontoResultBox" style="display:none">
+            <span class="text-danger fw-bold" id="descontoResult">-R$ 0,00</span>
+          </div>
+        </div>
+      </div>
       <div class="total-bar mx-3 mb-3">
         <div>
-          <div class="label">Total Geral</div>
+          <div class="label" id="totalLabel">Total Geral</div>
         </div>
         <div class="value" id="totalGeral">R$ 0,00</div>
       </div>
@@ -295,6 +313,9 @@ async function carregarOrcamento(id) {
     document.getElementById("inCidade").value = data.cidade || "";
     document.getElementById("inMostrarNota").checked = data.mostrar_nota !== false;
     document.getElementById("rtPct").value = data.rt_pct || 0;
+    document.getElementById("descontoTipo").value = data.desconto_tipo || "";
+    document.getElementById("descontoValor").value = data.desconto_valor || 0;
+    toggleDesconto();
 
     const pagSel = document.getElementById("inPagamento");
     for (let opt of pagSel.options) {
@@ -481,6 +502,31 @@ function renderItens() {
   document.getElementById("totalGeral").textContent = formatBRL(totalGeral);
   document.getElementById("resumoItens").textContent =
     `${itens.length} iten(s) · ${totalArea.toFixed(2).replace(".",",")} m²`;
+  recalcularTotal();
+}
+
+function toggleDesconto() {
+  const tipo = document.getElementById("descontoTipo").value;
+  document.getElementById("descontoBox").style.display = tipo ? "block" : "none";
+  document.getElementById("descontoResultBox").style.display = tipo ? "block" : "none";
+}
+
+function recalcularTotal() {
+  const tipo = document.getElementById("descontoTipo").value;
+  const val = parseFloat(document.getElementById("descontoValor")?.value) || 0;
+  const totalBruto = itens.reduce((s, i) => s + (parseFloat(i.total) || 0), 0);
+  let desconto = 0;
+  if (tipo === "pct" && val > 0) desconto = totalBruto * val / 100;
+  else if (tipo === "fixo" && val > 0) desconto = val;
+  const totalFinal = totalBruto - desconto;
+  if (desconto > 0) {
+    document.getElementById("descontoResult").textContent = `-${formatBRL(desconto)}`;
+    document.getElementById("totalLabel").textContent = "Total c/ Desconto";
+    document.getElementById("totalGeral").textContent = formatBRL(totalFinal);
+  } else {
+    document.getElementById("totalLabel").textContent = "Total Geral";
+    document.getElementById("totalGeral").textContent = formatBRL(totalBruto);
+  }
 }
 
 let itemSelecionadoIdx = -1;
@@ -585,6 +631,8 @@ async function salvarOrcamento() {
     forma_pagamento: document.getElementById("inPagamento").value,
     mostrar_nota: document.getElementById("inMostrarNota").checked,
     rt_pct: parseFloat(document.getElementById("rtPct").value) || 0,
+    desconto_tipo: document.getElementById("descontoTipo").value || "",
+    desconto_valor: parseFloat(document.getElementById("descontoValor")?.value) || 0,
     itens,
   };
 

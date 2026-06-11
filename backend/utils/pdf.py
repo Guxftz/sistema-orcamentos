@@ -51,7 +51,8 @@ def wrap_text(texto, fonte, tamanho, largura_max, c_obj):
 def gerar_pdf_orcamento(
     nome_cliente, endereco_obra, data_orcamento, itens,
     numero_orcamento, forma_pagamento, mostrar_nota=True,
-    logo_base64="", ocultar_valores_itens=False
+    logo_base64="", ocultar_valores_itens=False,
+    desconto_tipo="fixo", desconto_valor=0
 ):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -60,9 +61,9 @@ def gerar_pdf_orcamento(
     logo_img = None
     if logo_base64:
         try:
-            from PIL import Image
+            from reportlab.lib.utils import ImageReader
             img_data = base64.b64decode(logo_base64)
-            logo_img = io.BytesIO(img_data)
+            logo_img = ImageReader(io.BytesIO(img_data))
         except Exception:
             logo_img = None
 
@@ -247,16 +248,38 @@ def gerar_pdf_orcamento(
         y, x0, x1 = desenhar_cabecalho(completo=False)
         y -= 5 * mm
 
-    total_com_nota = total_geral * 1.08
+    desconto_valor = float(desconto_valor or 0)
+    if desconto_tipo == "pct" and desconto_valor > 0:
+        desconto_real = total_geral * desconto_valor / 100
+    elif desconto_tipo == "fixo" and desconto_valor > 0:
+        desconto_real = desconto_valor
+    else:
+        desconto_real = 0
+    total_final = total_geral - desconto_real
+    total_com_nota = total_final * 1.08
+
     total_x_right = 195 * mm
     total_top_y = y - 1 * mm
 
     c.setStrokeColor(colors.black)
     c.setLineWidth(1)
     c.line(142 * mm, total_top_y + 4 * mm, total_x_right, total_top_y + 4 * mm)
-    c.setFont("Helvetica-Bold", 13)
     c.setFillColor(colors.black)
-    c.drawRightString(total_x_right, total_top_y - 2 * mm, f"TOTAL: R$ {format_brl_pdf(total_geral)}")
+
+    if desconto_real > 0:
+        c.setFont("Helvetica", 10)
+        c.drawRightString(total_x_right, total_top_y - 2 * mm, f"SUBTOTAL: R$ {format_brl_pdf(total_geral)}")
+        total_top_y -= 7 * mm
+        if desconto_tipo == "pct":
+            desc_label = f"DESCONTO ({desconto_valor:.2g}%): -R$ {format_brl_pdf(desconto_real)}"
+        else:
+            desc_label = f"DESCONTO: -R$ {format_brl_pdf(desconto_real)}"
+        c.setFont("Helvetica-Bold", 10)
+        c.drawRightString(total_x_right, total_top_y - 2 * mm, desc_label)
+        total_top_y -= 8 * mm
+
+    c.setFont("Helvetica-Bold", 13)
+    c.drawRightString(total_x_right, total_top_y - 2 * mm, f"TOTAL: R$ {format_brl_pdf(total_final)}")
 
     y = total_top_y - 10 * mm
     c.setStrokeColor(colors.black)
@@ -351,9 +374,9 @@ def gerar_pdf_montador(nome_cliente, data_orcamento, itens, total_geral, logo_ba
     logo_img = None
     if logo_base64:
         try:
-            from PIL import Image
+            from reportlab.lib.utils import ImageReader
             img_data = base64.b64decode(logo_base64)
-            logo_img = io.BytesIO(img_data)
+            logo_img = ImageReader(io.BytesIO(img_data))
         except Exception:
             logo_img = None
 

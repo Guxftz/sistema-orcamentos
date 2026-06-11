@@ -39,6 +39,8 @@ class OrcamentoCreate(BaseModel):
     forma_pagamento: Optional[str] = "A definir"
     mostrar_nota: Optional[bool] = True
     rt_pct: Optional[float] = 0
+    desconto_tipo: Optional[str] = ""
+    desconto_valor: Optional[float] = 0
     itens: List[ItemOrcamento]
 
 
@@ -60,7 +62,19 @@ def _next_numero(conn):
     cur = conn.cursor()
     cur.execute("UPDATE orc_sequence SET ultimo_numero = ultimo_numero + 1 WHERE id = 1 RETURNING ultimo_numero")
     row = cur.fetchone()
-    return row["ultimo_numero"] if row else 1
+    seq = row["ultimo_numero"] if row else 1
+    year = datetime.now().year
+    return int(f"{seq}{year}")
+
+
+def _calcular_total(itens, desconto_tipo, desconto_valor):
+    total_bruto = sum(i.total for i in itens)
+    dv = float(desconto_valor or 0)
+    if desconto_tipo == "pct" and dv > 0:
+        return total_bruto - (total_bruto * dv / 100)
+    elif desconto_tipo == "fixo" and dv > 0:
+        return total_bruto - dv
+    return total_bruto
 
 
 @router.get("")
@@ -80,13 +94,15 @@ def criar_orcamento(body: OrcamentoCreate, user=Depends(get_current_user)):
     with get_db() as conn:
         numero = _next_numero(conn)
         itens_json = json.dumps([i.dict() for i in body.itens], ensure_ascii=False)
-        total = sum(i.total for i in body.itens)
+        total = _calcular_total(body.itens, body.desconto_tipo, body.desconto_valor)
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO orcamentos (numero, data, cliente, endereco, cidade, total, forma_pagamento, mostrar_nota, rt_pct, itens_json)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING id
+            INSERT INTO orcamentos (numero, data, cliente, endereco, cidade, total, forma_pagamento,
+                mostrar_nota, rt_pct, desconto_tipo, desconto_valor, itens_json)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb) RETURNING id
         """, (numero, body.data, body.cliente, body.endereco, body.cidade, total,
-              body.forma_pagamento, body.mostrar_nota, body.rt_pct, itens_json))
+              body.forma_pagamento, body.mostrar_nota, body.rt_pct,
+              body.desconto_tipo or "", body.desconto_valor or 0, itens_json))
         row = cur.fetchone()
         conn.commit()
     return {"id": row["id"], "numero": numero}
@@ -110,14 +126,16 @@ def obter_orcamento(orc_id: int, user=Depends(get_current_user)):
 def atualizar_orcamento(orc_id: int, body: OrcamentoCreate, user=Depends(get_current_user)):
     with get_db() as conn:
         itens_json = json.dumps([i.dict() for i in body.itens], ensure_ascii=False)
-        total = sum(i.total for i in body.itens)
+        total = _calcular_total(body.itens, body.desconto_tipo, body.desconto_valor)
         cur = conn.cursor()
         cur.execute("""
             UPDATE orcamentos SET data=%s, cliente=%s, endereco=%s, cidade=%s, total=%s,
-            forma_pagamento=%s, mostrar_nota=%s, rt_pct=%s, itens_json=%s::jsonb
+            forma_pagamento=%s, mostrar_nota=%s, rt_pct=%s,
+            desconto_tipo=%s, desconto_valor=%s, itens_json=%s::jsonb
             WHERE id=%s
         """, (body.data, body.cliente, body.endereco, body.cidade, total,
-              body.forma_pagamento, body.mostrar_nota, body.rt_pct, itens_json, orc_id))
+              body.forma_pagamento, body.mostrar_nota, body.rt_pct,
+              body.desconto_tipo or "", body.desconto_valor or 0, itens_json, orc_id))
         conn.commit()
     return {"ok": True}
 
@@ -157,9 +175,12 @@ def download_pdf(orc_id: int, user=Depends(get_current_user)):
         mostrar_nota=data.get("mostrar_nota", True),
         logo_base64=logo,
         ocultar_valores_itens=ocultar,
+        desconto_tipo=data.get("desconto_tipo", ""),
+        desconto_valor=float(data.get("desconto_valor", 0) or 0),
     )
 
-    filename = f"orcamento_{data.get('numero', orc_id):03d}_{data.get('cliente','')[:20]}.pdf"
+    num = data.get("numero", orc_id)
+    filename = f"orcamento_{num}_{data.get('cliente','')[:20]}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -190,7 +211,8 @@ def download_excel(orc_id: int, user=Depends(get_current_user)):
         forma_pagamento=data.get("forma_pagamento", "A definir"),
     )
 
-    filename = f"orcamento_{data.get('numero', orc_id):03d}_{data.get('cliente','')[:20]}.xlsx"
+    num = data.get("numero", orc_id)
+    filename = f"orcamento_{num}_{data.get('cliente','')[:20]}.xlsx"
     return Response(
         content=xlsx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

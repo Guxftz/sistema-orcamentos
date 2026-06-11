@@ -133,6 +133,8 @@ def init_db():
         """)
 
         cur.execute("ALTER TABLE orcamentos ADD COLUMN IF NOT EXISTS cidade TEXT DEFAULT ''")
+        cur.execute("ALTER TABLE orcamentos ADD COLUMN IF NOT EXISTS desconto_tipo TEXT DEFAULT 'fixo'")
+        cur.execute("ALTER TABLE orcamentos ADD COLUMN IF NOT EXISTS desconto_valor REAL DEFAULT 0")
         cur.execute("ALTER TABLE servicos ADD COLUMN IF NOT EXISTS precos_cidade JSONB")
 
         defaults = [
