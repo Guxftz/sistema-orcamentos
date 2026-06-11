@@ -72,7 +72,6 @@ def gerar_pdf_orcamento(
 
         if logo_img:
             try:
-                logo_img.seek(0)
                 logo_larg = 70 * mm
                 logo_alt = 30 * mm
                 x_logo = 20 * mm
@@ -384,7 +383,6 @@ def gerar_pdf_montador(nome_cliente, data_orcamento, itens, total_geral, logo_ba
         y = altura - 15 * mm
         if logo_img:
             try:
-                logo_img.seek(0)
                 c.drawImage(logo_img, 15 * mm, y - 18 * mm,
                             width=40 * mm, height=18 * mm,
                             preserveAspectRatio=True, mask="auto")
