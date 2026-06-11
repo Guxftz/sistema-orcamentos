@@ -128,24 +128,24 @@
 
   async function carregarDados() {
     try {
-      const [orcs, cobDash] = await Promise.all([
-        apiFetch("/orcamentos"),
-        apiFetch("/cobrancas/dashboard"),
-      ]);
+      const orcs = await apiFetch("/orcamentos");
       todosOrc = orcs || [];
-
       const total = todosOrc.length;
       const soma = todosOrc.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
       const media = total ? soma / total : 0;
-
       document.getElementById("statTotal").textContent = total;
       document.getElementById("statVendido").textContent = formatBRL(soma);
       document.getElementById("statMedia").textContent = formatBRL(media);
-      document.getElementById("statPendente").textContent = formatBRL(cobDash?.total_pendente || 0);
-
       renderTabela(todosOrc);
     } catch (e) {
-      showToast("Erro ao carregar dados: " + e.message, "error");
+      showToast("Erro ao carregar orçamentos: " + e.message, "error");
+    }
+
+    try {
+      const cobDash = await apiFetch("/cobrancas/dashboard");
+      document.getElementById("statPendente").textContent = formatBRL(cobDash?.total_pendente || 0);
+    } catch (e) {
+      document.getElementById("statPendente").textContent = "R$ 0,00";
     }
   }
 

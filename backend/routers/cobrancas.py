@@ -43,10 +43,10 @@ def listar_cobrancas(filtro: Optional[str] = None, user=Depends(get_current_user
 def dashboard_cobrancas(user=Depends(get_current_user)):
     with get_db() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT COALESCE(SUM(valor), 0) FROM cobrancas WHERE status = 'Pendente'")
-        total_pendente = float(cur.fetchone()["coalesce"] or 0)
-        cur.execute("SELECT COALESCE(SUM(valor), 0) FROM cobrancas WHERE status = 'Pago'")
-        total_pago = float(cur.fetchone()["coalesce"] or 0)
+        cur.execute("SELECT COALESCE(SUM(valor), 0) AS total FROM cobrancas WHERE status = 'Pendente'")
+        total_pendente = float(cur.fetchone()["total"] or 0)
+        cur.execute("SELECT COALESCE(SUM(valor), 0) AS total FROM cobrancas WHERE status = 'Pago'")
+        total_pago = float(cur.fetchone()["total"] or 0)
         cur.execute("""
             SELECT cliente, telefone, descricao, valor, data
             FROM cobrancas WHERE status = 'Pendente'
