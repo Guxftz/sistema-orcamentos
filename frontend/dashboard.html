@@ -127,8 +127,15 @@
   let excluirId = null;
 
   async function carregarDados() {
+    const tbody = document.getElementById("tabelaOrc");
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Carregando...</td></tr>';
+
     try {
       const orcs = await apiFetch("/orcamentos");
+      if (orcs === null) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Sessão expirada — faça login novamente.</td></tr>';
+        return;
+      }
       todosOrc = orcs || [];
       const total = todosOrc.length;
       const soma = todosOrc.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
@@ -138,7 +145,7 @@
       document.getElementById("statMedia").textContent = formatBRL(media);
       renderTabela(todosOrc);
     } catch (e) {
-      showToast("Erro ao carregar orçamentos: " + e.message, "error");
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Erro: ${e.message}</td></tr>`;
     }
 
     try {
