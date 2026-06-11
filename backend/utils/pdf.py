@@ -58,20 +58,27 @@ def gerar_pdf_orcamento(
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_data = None
+    logo_png = None
     if logo_base64:
         try:
-            logo_data = base64.b64decode(logo_base64)
+            from PIL import Image as PilImage
+            from reportlab.lib.utils import ImageReader
+            raw = base64.b64decode(logo_base64)
+            pil_img = PilImage.open(io.BytesIO(raw)).convert("RGBA")
+            png_buf = io.BytesIO()
+            pil_img.save(png_buf, format="PNG")
+            png_buf.seek(0)
+            logo_png = png_buf.read()
         except Exception:
-            logo_data = None
+            logo_png = None
 
     def desenhar_cabecalho(completo=True):
         topo = altura - 20 * mm
 
-        if logo_data:
+        if logo_png:
             try:
                 from reportlab.lib.utils import ImageReader
-                logo_img = ImageReader(io.BytesIO(logo_data))
+                logo_img = ImageReader(io.BytesIO(logo_png))
                 logo_larg = 70 * mm
                 logo_alt = 30 * mm
                 x_logo = 20 * mm
@@ -370,19 +377,25 @@ def gerar_pdf_montador(nome_cliente, data_orcamento, itens, total_geral, logo_ba
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_data_m = None
+    logo_png_m = None
     if logo_base64:
         try:
-            logo_data_m = base64.b64decode(logo_base64)
+            from PIL import Image as PilImage
+            raw_m = base64.b64decode(logo_base64)
+            pil_m = PilImage.open(io.BytesIO(raw_m)).convert("RGBA")
+            buf_m = io.BytesIO()
+            pil_m.save(buf_m, format="PNG")
+            buf_m.seek(0)
+            logo_png_m = buf_m.read()
         except Exception:
-            logo_data_m = None
+            logo_png_m = None
 
     def cabecalho():
         y = altura - 15 * mm
-        if logo_data_m:
+        if logo_png_m:
             try:
                 from reportlab.lib.utils import ImageReader
-                logo_img = ImageReader(io.BytesIO(logo_data_m))
+                logo_img = ImageReader(io.BytesIO(logo_png_m))
                 c.drawImage(logo_img, 15 * mm, y - 18 * mm,
                             width=40 * mm, height=18 * mm,
                             preserveAspectRatio=True, mask="auto")
