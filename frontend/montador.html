@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Montador — EBZ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="brand">🪨 EBZ Mármores</div><h6>Sistema de Orçamentos</h6></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span>Dashboard</a>
+    <a href="orcamento.html" class="sidebar-link"><span class="icon">🧾</span>Novo Orçamento</a>
+    <a href="historico.html" class="sidebar-link"><span class="icon">📋</span>Histórico</a>
+    <a href="montador.html" class="sidebar-link active"><span class="icon">🔧</span>Montador</a>
+    <a href="clientes.html" class="sidebar-link"><span class="icon">👥</span>Clientes</a>
+    <a href="cobrancas.html" class="sidebar-link"><span class="icon">💰</span>Cobranças</a>
+    <a href="configuracoes.html" class="sidebar-link"><span class="icon">⚙️</span>Configurações</a>
+  </nav>
+  <div class="sidebar-footer"><span id="sidebarUser"></span><br><a href="#" onclick="logout()" style="color:#c8d6e5;font-size:.8rem;">Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="top-bar">
+    <h5>🔧 Orçamento Montador</h5>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="novoOrcamento()">+ Novo</button>
+      <button class="btn btn-sm btn-primary" onclick="salvar()">💾 Salvar</button>
+      <button class="btn btn-sm btn-success" id="btnPdf" onclick="gerarPdf()" disabled>📄 PDF</button>
+      <button class="btn btn-sm btn-outline-success" id="btnExcel" onclick="gerarExcel()" disabled>📊 Excel</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <!-- Dados -->
+    <div class="form-section">
+      <h6>Dados</h6>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Cliente *</label><input type="text" id="inCliente" class="form-control"></div>
+        <div class="col-md-3"><label class="form-label">Data *</label><input type="text" id="inData" class="form-control"></div>
+      </div>
+    </div>
+
+    <!-- Adicionar item -->
+    <div class="form-section">
+      <h6>➕ Adicionar Item</h6>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4"><label class="form-label">Descrição *</label><input type="text" id="mDesc" class="form-control"></div>
+        <div class="col-md-1"><label class="form-label">QTD</label><input type="number" id="mQtd" class="form-control" value="1" min="1"></div>
+        <div class="col-md-1"><label class="form-label">ML</label><input type="number" id="mMl" class="form-control" step="0.01" placeholder="0"></div>
+        <div class="col-md-2"><label class="form-label">Valor/ML (R$)</label><input type="number" id="mVml" class="form-control" step="0.01" placeholder="0,00"></div>
+        <div class="col-md-2"><label class="form-label">Valor Fixo (R$)</label><input type="number" id="mVfix" class="form-control" step="0.01" placeholder="0,00"></div>
+        <div class="col-md-1"><label class="form-label">Total</label><input type="text" id="mTotal" class="form-control" readonly style="background:#f8f9fa;font-weight:700;"></div>
+        <div class="col-md-1 d-flex align-items-end pb-1">
+          <button class="btn btn-success w-100" onclick="adicionarItem()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="form-section p-0">
+      <div class="d-flex justify-content-between align-items-center px-3 py-2">
+        <h6 class="mb-0">Itens</h6>
+        <button class="btn btn-sm btn-outline-danger" onclick="removerSelecionado()" id="btnRem" disabled>Remover</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0" id="itensTable">
+          <thead><tr>
+            <th>Descrição</th><th class="text-center">QTD</th><th class="text-center">ML</th>
+            <th class="text-end">Valor/ML</th><th class="text-end">Valor Fixo</th><th class="text-end">Total</th>
+          </tr></thead>
+          <tbody id="itensBody"></tbody>
+        </table>
+      </div>
+      <div class="total-bar mx-3 mb-3">
+        <div><div class="label">Total Geral</div></div>
+        <div class="value" id="totalGeral">R$ 0,00</div>
+      </div>
+    </div>
+
+    <!-- Histórico de montadores -->
+    <div class="table-card mt-4">
+      <div class="card-header">Histórico</div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Data</th><th>Cliente</th><th class="text-end">Total</th><th class="text-center">Ações</th></tr></thead>
+          <tbody id="tbHistorico"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"><div id="toast" class="toast align-items-center text-white border-0">
+  <div class="d-flex"><div class="toast-body" id="toastMsg"></div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toast').classList.remove('show')"></button>
+  </div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script>
+<script>
+requireAuth();
+document.getElementById("sidebarUser").textContent = getUsername();
+let itens = [], montId = null, selIdx = -1;
+
+document.getElementById("inData").value = today();
+
+["mMl","mVml","mVfix","mQtd"].forEach(id => {
+  document.getElementById(id).addEventListener("input", calcTotal);
+});
+
+function calcTotal() {
+  const ml = parseFloat(document.getElementById("mMl").value)||0;
+  const vml = parseFloat(document.getElementById("mVml").value)||0;
+  const vfix = parseFloat(document.getElementById("mVfix").value)||0;
+  const qtd = parseFloat(document.getElementById("mQtd").value)||1;
+  const total = qtd*(ml*vml + vfix);
+  document.getElementById("mTotal").value = formatBRL(total);
+  return {ml,vml,vfix,qtd,total};
+}
+
+function adicionarItem() {
+  const desc = document.getElementById("mDesc").value.trim();
+  if (!desc) { showToast("Informe a descrição","warning"); return; }
+  const v = calcTotal();
+  if (v.total===0) { showToast("Informe valores","warning"); return; }
+  itens.push({descricao:desc,qtd:v.qtd,ml:v.ml,valor_ml:v.vml,valor_fixo:v.vfix,total:v.total});
+  renderItens();
+  document.getElementById("mDesc").value="";
+  document.getElementById("mMl").value="";
+  document.getElementById("mVml").value="";
+  document.getElementById("mVfix").value="";
+  document.getElementById("mQtd").value="1";
+  document.getElementById("mTotal").value="";
+}
+
+function renderItens() {
+  const tb = document.getElementById("itensBody");
+  tb.innerHTML="";
+  let tot=0;
+  itens.forEach((item,i)=>{
+    const fmt = v => parseFloat(v)>0 ? formatBRL(v) : "-";
+    const tr=document.createElement("tr");
+    tr.dataset.idx=i;
+    tr.addEventListener("click",()=>{
+      document.querySelectorAll("#itensBody tr").forEach(r=>r.classList.remove("selected-row"));
+      if(selIdx===i){selIdx=-1;document.getElementById("btnRem").disabled=true;return;}
+      tr.classList.add("selected-row");selIdx=i;document.getElementById("btnRem").disabled=false;
+    });
+    tr.innerHTML=`<td>${item.descricao}</td><td class="text-center">${item.qtd}</td><td class="text-center">${item.ml>0?item.ml:"-"}</td><td class="text-end">${fmt(item.valor_ml)}</td><td class="text-end">${fmt(item.valor_fixo)}</td><td class="text-end fw-bold">${formatBRL(item.total)}</td>`;
+    tb.appendChild(tr);
+    tot+=item.total;
+  });
+  document.getElementById("totalGeral").textContent=formatBRL(tot);
+}
+
+function removerSelecionado() {
+  if(selIdx<0)return;
+  itens.splice(selIdx,1);selIdx=-1;
+  document.getElementById("btnRem").disabled=true;
+  renderItens();
+}
+
+function novoOrcamento() {
+  if(itens.length&&!confirm("Descartar atual?"))return;
+  itens=[];montId=null;
+  document.getElementById("inCliente").value="";
+  document.getElementById("inData").value=today();
+  document.getElementById("btnPdf").disabled=true;
+  document.getElementById("btnExcel").disabled=true;
+  renderItens();
+}
+
+async function salvar() {
+  const cliente=document.getElementById("inCliente").value.trim();
+  if(!cliente){showToast("Informe o cliente","warning");return;}
+  if(!itens.length){showToast("Adicione ao menos um item","warning");return;}
+  const payload={cliente,data:document.getElementById("inData").value,itens};
+  try {
+    if(montId) await apiFetch(`/montador/${montId}`,{method:"PUT",body:JSON.stringify(payload)});
+    else { const r=await apiFetch("/montador",{method:"POST",body:JSON.stringify(payload)}); montId=r.id; }
+    showToast("Salvo!");
+    document.getElementById("btnPdf").disabled=false;
+    document.getElementById("btnExcel").disabled=false;
+    carregarHistorico();
+  } catch(e){showToast(e.message,"error");}
+}
+
+async function gerarPdf() {
+  if(!montId){await salvar();if(!montId)return;}
+  const token=getToken();
+  const res=await fetch(`${API_URL}/montador/${montId}/pdf`,{headers:{Authorization:`Bearer ${token}`}});
+  const blob=await res.blob();
+  window.open(URL.createObjectURL(blob),"_blank");
+}
+
+async function gerarExcel() {
+  if(!montId){await salvar();if(!montId)return;}
+  const token=getToken();
+  const res=await fetch(`${API_URL}/montador/${montId}/excel`,{headers:{Authorization:`Bearer ${token}`}});
+  const blob=await res.blob();
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`montador_${montId}.xlsx`;a.click();
+}
+
+async function carregarHistorico() {
+  const list=await apiFetch("/montador")||[];
+  const tb=document.getElementById("tbHistorico");
+  tb.innerHTML="";
+  list.forEach(m=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${m.data||""}</td><td>${m.cliente||""}</td><td class="text-end">${formatBRL(m.total)}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-primary me-1" onclick="carregarMontador(${m.id})">✏️</button>
+        <button class="btn btn-sm btn-outline-success me-1" onclick="pdfMont(${m.id})">📄</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function carregarMontador(id) {
+  const data=await apiFetch(`/montador/${id}`);
+  montId=id;
+  document.getElementById("inCliente").value=data.cliente||"";
+  document.getElementById("inData").value=data.data||"";
+  itens=data.itens_json||[];
+  renderItens();
+  document.getElementById("btnPdf").disabled=false;
+  document.getElementById("btnExcel").disabled=false;
+}
+
+async function pdfMont(id) {
+  const token=getToken();
+  const res=await fetch(`${API_URL}/montador/${id}/pdf`,{headers:{Authorization:`Bearer ${token}`}});
+  const blob=await res.blob();
+  window.open(URL.createObjectURL(blob),"_blank");
+}
+
+carregarHistorico();
+</script>
+</body></html>

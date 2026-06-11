@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — EBZ Orçamentos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🪨 EBZ Mármores</div>
+    <h6>Sistema de Orçamentos</h6>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="sidebar-link active" data-page="dashboard"><span class="icon">📊</span>Dashboard</a>
+    <a href="orcamento.html" class="sidebar-link" data-page="orcamento"><span class="icon">🧾</span>Novo Orçamento</a>
+    <a href="historico.html" class="sidebar-link" data-page="historico"><span class="icon">📋</span>Histórico</a>
+    <a href="montador.html" class="sidebar-link" data-page="montador"><span class="icon">🔧</span>Montador</a>
+    <a href="clientes.html" class="sidebar-link" data-page="clientes"><span class="icon">👥</span>Clientes</a>
+    <a href="cobrancas.html" class="sidebar-link" data-page="cobrancas"><span class="icon">💰</span>Cobranças</a>
+    <a href="configuracoes.html" class="sidebar-link" data-page="config"><span class="icon">⚙️</span>Configurações</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span id="sidebarUser"></span><br>
+    <a href="#" onclick="logout()" style="color:#c8d6e5;font-size:.8rem;">Sair</a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="top-bar">
+    <h5>📊 Dashboard</h5>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-primary" onclick="window.location.href='orcamento.html'">+ Novo Orçamento</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="carregarDados()">↻ Atualizar</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="label">Total de Orçamentos</div>
+          <div class="value" id="statTotal">—</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card green">
+          <div class="label">Total Vendido</div>
+          <div class="value" id="statVendido">—</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card orange">
+          <div class="label">Ticket Médio</div>
+          <div class="value" id="statMedia">—</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card red">
+          <div class="label">Cobranças Pendentes</div>
+          <div class="value" id="statPendente">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de orçamentos -->
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Últimos Orçamentos</span>
+        <input type="text" id="searchInput" class="form-control form-control-sm" style="max-width:260px" placeholder="Buscar cliente...">
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Endereço</th>
+              <th class="text-end">Total</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaOrc"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container">
+  <div id="toast" class="toast align-items-center text-white border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMsg"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toast').classList.remove('show')"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar exclusão -->
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Confirmar exclusão</h6></div>
+      <div class="modal-body">Excluir orçamento <strong id="excluirInfo"></strong>?</div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-sm btn-danger" id="btnConfirmarExcluir">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  requireAuth();
+  document.getElementById("sidebarUser").textContent = getUsername();
+
+  let todosOrc = [];
+  let excluirId = null;
+
+  async function carregarDados() {
+    try {
+      const [orcs, cobDash] = await Promise.all([
+        apiFetch("/orcamentos"),
+        apiFetch("/cobrancas/dashboard"),
+      ]);
+      todosOrc = orcs || [];
+
+      const total = todosOrc.length;
+      const soma = todosOrc.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+      const media = total ? soma / total : 0;
+
+      document.getElementById("statTotal").textContent = total;
+      document.getElementById("statVendido").textContent = formatBRL(soma);
+      document.getElementById("statMedia").textContent = formatBRL(media);
+      document.getElementById("statPendente").textContent = formatBRL(cobDash?.total_pendente || 0);
+
+      renderTabela(todosOrc);
+    } catch (e) {
+      showToast("Erro ao carregar dados: " + e.message, "error");
+    }
+  }
+
+  function renderTabela(orcs) {
+    const tbody = document.getElementById("tabelaOrc");
+    tbody.innerHTML = "";
+    if (!orcs.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum orçamento encontrado</td></tr>';
+      return;
+    }
+    orcs.forEach(o => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><span class="badge bg-secondary">${String(o.numero || o.id).padStart(3,"0")}</span></td>
+        <td>${o.data || ""}</td>
+        <td><strong>${o.cliente || ""}</strong></td>
+        <td class="text-muted" style="font-size:.83rem">${o.endereco || ""}</td>
+        <td class="text-end fw-bold">${formatBRL(o.total)}</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="editarOrc(${o.id})" title="Editar">✏️</button>
+          <button class="btn btn-sm btn-outline-success me-1" onclick="downloadPdf(${o.id})" title="PDF">📄</button>
+          <button class="btn btn-sm btn-outline-secondary me-1" onclick="downloadExcel(${o.id})" title="Excel">📊</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="confirmarExcluir(${o.id}, '${(o.cliente||"").replace(/'/g,""")}')" title="Excluir">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const q = this.value.toLowerCase();
+    renderTabela(todosOrc.filter(o =>
+      (o.cliente || "").toLowerCase().includes(q) ||
+      String(o.numero || o.id).includes(q) ||
+      (o.data || "").includes(q)
+    ));
+  });
+
+  function editarOrc(id) {
+    window.location.href = `orcamento.html?id=${id}`;
+  }
+
+  async function downloadPdf(id) {
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_URL}/orcamentos/${id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `orcamento_${id}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { showToast(e.message, "error"); }
+  }
+
+  async function downloadExcel(id) {
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_URL}/orcamentos/${id}/excel`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Erro ao gerar Excel");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `orcamento_${id}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { showToast(e.message, "error"); }
+  }
+
+  function confirmarExcluir(id, nome) {
+    excluirId = id;
+    document.getElementById("excluirInfo").textContent = `#${id} — ${nome}`;
+    new bootstrap.Modal(document.getElementById("modalExcluir")).show();
+  }
+
+  document.getElementById("btnConfirmarExcluir").addEventListener("click", async () => {
+    if (!excluirId) return;
+    try {
+      await apiFetch(`/orcamentos/${excluirId}`, { method: "DELETE" });
+      bootstrap.Modal.getInstance(document.getElementById("modalExcluir")).hide();
+      showToast("Orçamento excluído");
+      carregarDados();
+    } catch (e) { showToast(e.message, "error"); }
+  });
+
+  carregarDados();
+</script>
+</body>
+</html>

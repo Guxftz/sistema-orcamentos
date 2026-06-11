@@ -1,0 +1,339 @@
+:root {
+  --sidebar-width: 220px;
+  --primary: #2c6fad;
+  --primary-dark: #1d4f7c;
+  --sidebar-bg: #1a2540;
+  --sidebar-text: #c8d6e5;
+  --sidebar-active: #2c6fad;
+}
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #f0f4f8;
+  margin: 0;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  min-height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,.25);
+}
+
+.sidebar-logo {
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid #2a3a56;
+  text-align: center;
+}
+
+.sidebar-logo h6 {
+  color: #fff;
+  font-size: .8rem;
+  margin: 6px 0 0;
+  opacity: .7;
+  font-weight: 400;
+}
+
+.sidebar-logo .brand {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: .9rem;
+  transition: background .15s, color .15s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,.07);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(44,111,173,.25);
+  color: #fff;
+  border-left-color: var(--sidebar-active);
+  font-weight: 600;
+}
+
+.sidebar-link .icon {
+  font-size: 1.1rem;
+  width: 22px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #2a3a56;
+  font-size: .8rem;
+  color: rgba(200,214,229,.5);
+}
+
+/* ===== MAIN ===== */
+.main-content {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  padding: 0;
+}
+
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid #dde3ed;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.top-bar h5 {
+  margin: 0;
+  font-weight: 700;
+  color: #1a2540;
+  font-size: 1.05rem;
+}
+
+.page-content {
+  padding: 24px 28px;
+}
+
+/* ===== CARDS ===== */
+.stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  border-left: 4px solid var(--primary);
+}
+
+.stat-card .label {
+  font-size: .78rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+}
+
+.stat-card .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2540;
+  margin-top: 4px;
+}
+
+.stat-card.green { border-left-color: #28a745; }
+.stat-card.red { border-left-color: #dc3545; }
+.stat-card.orange { border-left-color: #fd7e14; }
+
+/* ===== TABLE ===== */
+.table-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  overflow: hidden;
+}
+
+.table-card .card-header {
+  background: #f8f9fc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 20px;
+  font-weight: 700;
+  color: #1a2540;
+}
+
+.table th {
+  background: #f1f5fb;
+  font-size: .82rem;
+  font-weight: 700;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border-bottom: 2px solid #dde3ed;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: .9rem;
+}
+
+.table tbody tr:hover {
+  background: #f7f9fd;
+  cursor: pointer;
+}
+
+.table tbody tr.selected {
+  background: #e8f0fe;
+}
+
+/* ===== FORMS ===== */
+.form-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.form-section h6 {
+  font-weight: 700;
+  color: #1a2540;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: .95rem;
+}
+
+.form-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+/* ===== ITEM TABLE ===== */
+#itensTable th {
+  background: #c62828;
+  color: #fff;
+  font-size: .78rem;
+  border: none;
+}
+
+#itensTable td {
+  font-size: .85rem;
+  padding: 6px 8px;
+}
+
+#itensTable tr.selected-row td {
+  background: #e3f2fd;
+}
+
+/* ===== BADGES ===== */
+.badge-pago { background: #28a745; color: #fff; }
+.badge-pendente { background: #fd7e14; color: #fff; }
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 240px;
+}
+
+/* ===== LOGIN ===== */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a2540 0%, #2c6fad 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 40px 36px;
+  width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+
+.login-card h3 {
+  font-weight: 700;
+  color: #1a2540;
+  margin-bottom: 4px;
+}
+
+.login-card p {
+  color: #6c757d;
+  font-size: .9rem;
+  margin-bottom: 28px;
+}
+
+/* ===== TOTAL BAR ===== */
+.total-bar {
+  background: #1a2540;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.total-bar .label { font-size: .85rem; opacity: .8; }
+.total-bar .value { font-size: 1.3rem; font-weight: 700; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform .3s; }
+  .sidebar.open { transform: translateX(0); }
+  .main-content { margin-left: 0; }
+}
+
+.autocomplete-list {
+  position: absolute;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.autocomplete-list li {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: .9rem;
+}
+
+.autocomplete-list li:hover { background: #e8f0fe; }
+
+.rt-badge {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: .8rem;
+  font-weight: 600;
+}

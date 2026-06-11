@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Clientes — EBZ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="brand">🪨 EBZ Mármores</div><h6>Sistema de Orçamentos</h6></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span>Dashboard</a>
+    <a href="orcamento.html" class="sidebar-link"><span class="icon">🧾</span>Novo Orçamento</a>
+    <a href="historico.html" class="sidebar-link"><span class="icon">📋</span>Histórico</a>
+    <a href="montador.html" class="sidebar-link"><span class="icon">🔧</span>Montador</a>
+    <a href="clientes.html" class="sidebar-link active"><span class="icon">👥</span>Clientes</a>
+    <a href="cobrancas.html" class="sidebar-link"><span class="icon">💰</span>Cobranças</a>
+    <a href="configuracoes.html" class="sidebar-link"><span class="icon">⚙️</span>Configurações</a>
+  </nav>
+  <div class="sidebar-footer"><span id="sidebarUser"></span><br><a href="#" onclick="logout()" style="color:#c8d6e5;font-size:.8rem;">Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="top-bar">
+    <h5>👥 Clientes</h5>
+    <button class="btn btn-sm btn-primary" onclick="abrirModal()">+ Novo Cliente</button>
+  </div>
+  <div class="page-content">
+    <div class="table-card">
+      <div class="card-header d-flex gap-3 align-items-center">
+        <span>Clientes cadastrados</span>
+        <input type="text" id="busca" class="form-control form-control-sm" style="max-width:280px" placeholder="Buscar...">
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Nome</th><th>Telefone</th><th>Endereço</th><th>Obs.</th><th>Cadastro</th><th class="text-center">Ações</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title" id="modalTitulo">Novo Cliente</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="cliId">
+        <div class="mb-3"><label class="form-label">Nome *</label><input type="text" id="cliNome" class="form-control"></div>
+        <div class="mb-3"><label class="form-label">Telefone</label><input type="text" id="cliTel" class="form-control" placeholder="(19) 99999-9999"></div>
+        <div class="mb-3"><label class="form-label">Endereço</label><input type="text" id="cliEnd" class="form-control"></div>
+        <div class="mb-3"><label class="form-label">Observações</label><textarea id="cliObs" class="form-control" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvar()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"><div id="toast" class="toast align-items-center text-white border-0">
+  <div class="d-flex"><div class="toast-body" id="toastMsg"></div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toast').classList.remove('show')"></button>
+  </div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script>
+<script>
+requireAuth();
+document.getElementById("sidebarUser").textContent = getUsername();
+let todos = [];
+const modal = () => bootstrap.Modal.getOrCreateInstance(document.getElementById("modal"));
+
+async function carregar() {
+  todos = await apiFetch("/clientes") || [];
+  render(todos);
+}
+
+function render(list) {
+  const tb = document.getElementById("tbody");
+  tb.innerHTML = "";
+  if (!list.length) { tb.innerHTML='<tr><td colspan="6" class="text-center text-muted py-4">Nenhum cliente cadastrado</td></tr>'; return; }
+  list.forEach(c => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><strong>${c.nome}</strong></td><td>${c.telefone||""}</td><td style="font-size:.83rem">${c.endereco||""}</td>
+      <td style="font-size:.83rem">${c.observacoes||""}</td><td>${c.criado_em||""}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-primary me-1" onclick='editar(${JSON.stringify(c)})'>✏️</button>
+        <button class="btn btn-sm btn-outline-danger" onclick="excluir(${c.id},'${c.nome.replace(/'/g,"")}')">🗑️</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+
+document.getElementById("busca").addEventListener("input",function(){ render(todos.filter(c=>(c.nome||"").toLowerCase().includes(this.value.toLowerCase()))); });
+
+function abrirModal(id) {
+  document.getElementById("cliId").value="";
+  document.getElementById("cliNome").value="";
+  document.getElementById("cliTel").value="";
+  document.getElementById("cliEnd").value="";
+  document.getElementById("cliObs").value="";
+  document.getElementById("modalTitulo").textContent="Novo Cliente";
+  modal().show();
+}
+
+function editar(c) {
+  document.getElementById("cliId").value=c.id;
+  document.getElementById("cliNome").value=c.nome;
+  document.getElementById("cliTel").value=c.telefone||"";
+  document.getElementById("cliEnd").value=c.endereco||"";
+  document.getElementById("cliObs").value=c.observacoes||"";
+  document.getElementById("modalTitulo").textContent="Editar Cliente";
+  modal().show();
+}
+
+async function salvar() {
+  const nome = document.getElementById("cliNome").value.trim();
+  if (!nome) { showToast("Informe o nome","warning"); return; }
+  const payload = { nome, telefone:document.getElementById("cliTel").value, endereco:document.getElementById("cliEnd").value, observacoes:document.getElementById("cliObs").value };
+  const id = document.getElementById("cliId").value;
+  try {
+    if (id) await apiFetch(`/clientes/${id}`,{method:"PUT",body:JSON.stringify(payload)});
+    else await apiFetch("/clientes",{method:"POST",body:JSON.stringify(payload)});
+    modal().hide();
+    showToast("Cliente salvo!");
+    carregar();
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function excluir(id,nome) {
+  if (!confirm(`Excluir cliente "${nome}"?`)) return;
+  try { await apiFetch(`/clientes/${id}`,{method:"DELETE"}); showToast("Cliente excluído"); carregar(); }
+  catch(e){ showToast(e.message,"error"); }
+}
+
+carregar();
+</script>
+</body></html>

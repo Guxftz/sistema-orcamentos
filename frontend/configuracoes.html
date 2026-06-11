@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Configurações — EBZ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="brand">🪨 EBZ Mármores</div><h6>Sistema de Orçamentos</h6></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="sidebar-link"><span class="icon">📊</span>Dashboard</a>
+    <a href="orcamento.html" class="sidebar-link"><span class="icon">🧾</span>Novo Orçamento</a>
+    <a href="historico.html" class="sidebar-link"><span class="icon">📋</span>Histórico</a>
+    <a href="montador.html" class="sidebar-link"><span class="icon">🔧</span>Montador</a>
+    <a href="clientes.html" class="sidebar-link"><span class="icon">👥</span>Clientes</a>
+    <a href="cobrancas.html" class="sidebar-link"><span class="icon">💰</span>Cobranças</a>
+    <a href="configuracoes.html" class="sidebar-link active"><span class="icon">⚙️</span>Configurações</a>
+  </nav>
+  <div class="sidebar-footer"><span id="sidebarUser"></span><br><a href="#" onclick="logout()" style="color:#c8d6e5;font-size:.8rem;">Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="top-bar"><h5>⚙️ Configurações</h5></div>
+  <div class="page-content">
+    <div class="row g-4">
+      <!-- Config gerais -->
+      <div class="col-md-6">
+        <div class="form-section">
+          <h6>Configurações Gerais</h6>
+          <div class="mb-3"><label class="form-label">Nome da Empresa</label><input type="text" id="cfEmpresa" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">RT Padrão (%)</label><input type="number" id="cfRt" class="form-control" step="0.5" min="0" max="100"></div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" id="cfOcultar" class="form-check-input">
+            <label for="cfOcultar" class="form-check-label">Ocultar valor dos itens no PDF</label>
+          </div>
+          <button class="btn btn-primary" onclick="salvarConfig()">💾 Salvar Configurações</button>
+        </div>
+
+        <!-- Logo -->
+        <div class="form-section">
+          <h6>Logo da Empresa</h6>
+          <p class="text-muted" style="font-size:.85rem">A logo aparece no cabeçalho dos PDFs gerados.</p>
+          <input type="file" id="logoInput" class="form-control mb-3" accept="image/*">
+          <button class="btn btn-outline-primary" onclick="uploadLogo()">📤 Enviar Logo</button>
+        </div>
+
+        <!-- Senha -->
+        <div class="form-section">
+          <h6>Alterar Senha</h6>
+          <div class="mb-3"><label class="form-label">Nova Senha</label><input type="password" id="novaSenha" class="form-control" placeholder="Mínimo 6 caracteres"></div>
+          <div class="mb-3"><label class="form-label">Confirmar Senha</label><input type="password" id="confirmSenha" class="form-control"></div>
+          <button class="btn btn-outline-danger" onclick="alterarSenha()">🔒 Alterar Senha</button>
+        </div>
+      </div>
+
+      <!-- Materiais -->
+      <div class="col-md-6">
+        <div class="form-section">
+          <h6>Materiais</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-7"><input type="text" id="matNome" class="form-control" placeholder="Nome do material"></div>
+            <div class="col-3"><input type="number" id="matPreco" class="form-control" placeholder="R$/m²" step="0.01" min="0"></div>
+            <div class="col-2"><button class="btn btn-success w-100" onclick="salvarMaterial()">+</button></div>
+          </div>
+          <div style="max-height:220px;overflow-y:auto">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Material</th><th class="text-end">R$/m²</th><th></th></tr></thead>
+              <tbody id="tbMateriais"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Ambientes -->
+        <div class="form-section">
+          <h6>Ambientes</h6>
+          <div class="input-group mb-3">
+            <input type="text" id="ambNome" class="form-control" placeholder="Nome do ambiente">
+            <button class="btn btn-success" onclick="salvarAmbiente()">+</button>
+          </div>
+          <div style="max-height:160px;overflow-y:auto">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Ambiente</th><th></th></tr></thead>
+              <tbody id="tbAmbientes"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Serviços -->
+        <div class="form-section">
+          <h6>Serviços Pré-definidos</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-5"><input type="text" id="srvNome" class="form-control" placeholder="Nome do serviço"></div>
+            <div class="col-3"><select id="srvTipo" class="form-select"><option value="fixo">Fixo</option><option value="ml">ML</option></select></div>
+            <div class="col-2"><input type="number" id="srvPreco" class="form-control" placeholder="Preço" step="0.01"></div>
+            <div class="col-2"><button class="btn btn-success w-100" onclick="salvarServico()">+</button></div>
+          </div>
+          <div style="max-height:160px;overflow-y:auto">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Serviço</th><th>Tipo</th><th class="text-end">Preço</th><th></th></tr></thead>
+              <tbody id="tbServicos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"><div id="toast" class="toast align-items-center text-white border-0">
+  <div class="d-flex"><div class="toast-body" id="toastMsg"></div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toast').classList.remove('show')"></button>
+  </div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script><script src="js/auth.js"></script>
+<script>
+requireAuth();
+document.getElementById("sidebarUser").textContent = getUsername();
+
+async function carregar() {
+  const [cfg, mats, ambs, srvs] = await Promise.all([
+    apiFetch("/settings"),
+    apiFetch("/materiais"),
+    apiFetch("/ambientes"),
+    apiFetch("/servicos"),
+  ]);
+  document.getElementById("cfEmpresa").value = cfg.empresa || cfg.company_name || "";
+  document.getElementById("cfRt").value = cfg.rt_padrao || "0";
+  document.getElementById("cfOcultar").checked = cfg.ocultar_valor_itens_pdf === "true";
+  localStorage.setItem("empresa", cfg.empresa || cfg.company_name || "EBZ Mármores");
+
+  // Materiais
+  const tbM = document.getElementById("tbMateriais");
+  tbM.innerHTML = "";
+  (mats||[]).forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${m.nome}</td><td class="text-end">${formatBRL(m.preco)}</td>
+      <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirMaterial(${m.id})">✕</button></td>`;
+    tbM.appendChild(tr);
+  });
+
+  // Ambientes
+  const tbA = document.getElementById("tbAmbientes");
+  tbA.innerHTML = "";
+  (ambs||[]).forEach(a => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${a.nome}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirAmbiente(${a.id})">✕</button></td>`;
+    tbA.appendChild(tr);
+  });
+
+  // Serviços
+  const tbS = document.getElementById("tbServicos");
+  tbS.innerHTML = "";
+  (srvs||[]).forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(s.preco)}</td>
+      <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirServico(${s.id})">✕</button></td>`;
+    tbS.appendChild(tr);
+  });
+}
+
+async function salvarConfig() {
+  try {
+    await apiFetch("/settings",{method:"PUT",body:JSON.stringify({
+      empresa: document.getElementById("cfEmpresa").value,
+      company_name: document.getElementById("cfEmpresa").value,
+      rt_padrao: document.getElementById("cfRt").value,
+      ocultar_valor_itens_pdf: document.getElementById("cfOcultar").checked,
+    })});
+    localStorage.setItem("empresa", document.getElementById("cfEmpresa").value);
+    showToast("Configurações salvas!");
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function uploadLogo() {
+  const file = document.getElementById("logoInput").files[0];
+  if (!file) { showToast("Selecione uma imagem","warning"); return; }
+  const fd = new FormData();
+  fd.append("file", file);
+  try {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/settings/logo`, {
+      method:"POST", headers:{Authorization:`Bearer ${token}`}, body:fd
+    });
+    if (!res.ok) throw new Error("Erro ao enviar logo");
+    showToast("Logo enviada!");
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function alterarSenha() {
+  const n = document.getElementById("novaSenha").value;
+  const c = document.getElementById("confirmSenha").value;
+  if (!n || n.length < 6) { showToast("Mínimo 6 caracteres","warning"); return; }
+  if (n !== c) { showToast("Senhas não conferem","warning"); return; }
+  try {
+    await apiFetch("/auth/change-password",{method:"POST",body:JSON.stringify({username:getUsername(),new_password:n})});
+    showToast("Senha alterada! Faça login novamente.");
+    setTimeout(()=>logout(),2000);
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function salvarMaterial() {
+  const nome = document.getElementById("matNome").value.trim();
+  const preco = parseFloat(document.getElementById("matPreco").value)||0;
+  if (!nome) { showToast("Informe o nome","warning"); return; }
+  try {
+    await apiFetch("/materiais",{method:"POST",body:JSON.stringify({nome,preco})});
+    document.getElementById("matNome").value="";
+    document.getElementById("matPreco").value="";
+    showToast("Material salvo!"); carregar();
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function excluirMaterial(id) {
+  if (!confirm("Excluir material?")) return;
+  await apiFetch(`/materiais/${id}`,{method:"DELETE"});
+  showToast("Excluído"); carregar();
+}
+
+async function salvarAmbiente() {
+  const nome = document.getElementById("ambNome").value.trim().toUpperCase();
+  if (!nome) return;
+  try {
+    await apiFetch("/ambientes",{method:"POST",body:JSON.stringify({nome})});
+    document.getElementById("ambNome").value="";
+    showToast("Ambiente salvo!"); carregar();
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function excluirAmbiente(id) {
+  if (!confirm("Excluir ambiente?")) return;
+  await apiFetch(`/ambientes/${id}`,{method:"DELETE"});
+  showToast("Excluído"); carregar();
+}
+
+async function salvarServico() {
+  const nome = document.getElementById("srvNome").value.trim().toUpperCase();
+  const tipo = document.getElementById("srvTipo").value;
+  const preco = parseFloat(document.getElementById("srvPreco").value)||0;
+  if (!nome) { showToast("Informe o nome","warning"); return; }
+  try {
+    await apiFetch("/servicos",{method:"POST",body:JSON.stringify({nome,tipo,preco})});
+    document.getElementById("srvNome").value="";
+    document.getElementById("srvPreco").value="";
+    showToast("Serviço salvo!"); carregar();
+  } catch(e){ showToast(e.message,"error"); }
+}
+
+async function excluirServico(id) {
+  if (!confirm("Excluir serviço?")) return;
+  await apiFetch(`/servicos/${id}`,{method:"DELETE"});
+  showToast("Excluído"); carregar();
+}
+
+carregar();
+</script>
+</body></html>

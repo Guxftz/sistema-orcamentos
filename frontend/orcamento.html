@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orçamento — EBZ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🪨 EBZ Mármores</div>
+    <h6>Sistema de Orçamentos</h6>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="sidebar-link" data-page="dashboard"><span class="icon">📊</span>Dashboard</a>
+    <a href="orcamento.html" class="sidebar-link active" data-page="orcamento"><span class="icon">🧾</span>Novo Orçamento</a>
+    <a href="historico.html" class="sidebar-link" data-page="historico"><span class="icon">📋</span>Histórico</a>
+    <a href="montador.html" class="sidebar-link" data-page="montador"><span class="icon">🔧</span>Montador</a>
+    <a href="clientes.html" class="sidebar-link" data-page="clientes"><span class="icon">👥</span>Clientes</a>
+    <a href="cobrancas.html" class="sidebar-link" data-page="cobrancas"><span class="icon">💰</span>Cobranças</a>
+    <a href="configuracoes.html" class="sidebar-link" data-page="config"><span class="icon">⚙️</span>Configurações</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span id="sidebarUser"></span><br>
+    <a href="#" onclick="logout()" style="color:#c8d6e5;font-size:.8rem;">Sair</a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="top-bar">
+    <h5 id="pageTitle">🧾 Novo Orçamento</h5>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="rt-badge">RT: <input type="number" id="rtPct" value="0" min="0" max="100" step="0.5" style="width:50px;border:none;background:transparent;font-weight:700;" title="% de RT sobre m²"> %</span>
+      <button class="btn btn-sm btn-outline-secondary" onclick="novoOrcamento()">+ Novo</button>
+      <button class="btn btn-sm btn-primary" onclick="salvarOrcamento()">💾 Salvar</button>
+      <button class="btn btn-sm btn-success" id="btnPdf" onclick="gerarPdf()" disabled>📄 PDF</button>
+      <button class="btn btn-sm btn-outline-success" id="btnExcel" onclick="gerarExcel()" disabled>📊 Excel</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- Dados do cliente -->
+    <div class="form-section">
+      <h6>📋 Dados do Cliente / Obra</h6>
+      <div class="row g-3">
+        <div class="col-md-5 position-relative">
+          <label class="form-label">Cliente *</label>
+          <input type="text" id="inCliente" class="form-control" placeholder="Nome do cliente" autocomplete="off">
+          <ul id="autocompleteCliente" class="autocomplete-list d-none list-unstyled mb-0"></ul>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Data *</label>
+          <input type="text" id="inData" class="form-control" placeholder="DD/MM/AAAA">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Forma de pagamento</label>
+          <select id="inPagamento" class="form-select">
+            <option>A definir</option><option>Pix</option><option>Transferência</option>
+            <option>Boleto</option><option>Cartão Débito</option><option>Cartão Crédito</option>
+            <option>Cartão Crédito 2x</option><option>Cartão Crédito 3x</option>
+            <option>Cartão Crédito 4x</option><option>Cartão Crédito 5x</option>
+            <option>Cartão Crédito 6x</option><option>Cartão Crédito 10x</option>
+            <option>Cartão Crédito 12x</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="inMostrarNota" checked>
+            <label class="form-check-label" for="inMostrarNota" style="font-size:.82rem">Mostrar valor c/ nota (8%)</label>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Endereço da Obra</label>
+          <input type="text" id="inEndereco" class="form-control" placeholder="Endereço completo da obra">
+        </div>
+      </div>
+    </div>
+
+    <!-- Adicionar item -->
+    <div class="form-section">
+      <h6>➕ <span id="tituloFormItem">Adicionar Item</span></h6>
+      <div class="row g-2 mb-2">
+        <div class="col-md-3">
+          <label class="form-label">Ambiente *</label>
+          <select id="inAmbiente" class="form-select">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Descrição *</label>
+          <input type="text" id="inDescricao" class="form-control" placeholder="Ex: Bancada com cuba">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Material</label>
+          <div class="input-group">
+            <input type="text" id="inMaterial" class="form-control" placeholder="Material">
+            <button class="btn btn-outline-secondary" type="button" onclick="abrirModalMateriais()" title="Selecionar material">🔍</button>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <label class="form-label">QTD</label>
+          <input type="number" id="inQtd" class="form-control" value="1" min="1" step="1">
+        </div>
+      </div>
+      <div class="row g-2 mb-2">
+        <div class="col-md-2">
+          <label class="form-label">Compr. (m)</label>
+          <input type="number" id="inComp" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Larg. (m)</label>
+          <input type="number" id="inLarg" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Área direta (m²)</label>
+          <input type="number" id="inArea" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Valor/m² (R$)</label>
+          <input type="number" id="inValorM2" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">ML</label>
+          <input type="number" id="inMl" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Preço/ML (R$)</label>
+          <input type="number" id="inPrecoMl" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+      </div>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label">Valor fixo (R$)</label>
+          <input type="number" id="inValorFixo" class="form-control" step="0.01" placeholder="0,00">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Total calculado</label>
+          <input type="text" id="inTotalCalc" class="form-control" readonly style="background:#f8f9fa;font-weight:700;">
+        </div>
+        <div class="col-md-2 d-flex align-items-center gap-2 pt-4">
+          <input type="checkbox" id="inOcultarPdf" class="form-check-input">
+          <label for="inOcultarPdf" style="font-size:.82rem">Ocultar no PDF</label>
+        </div>
+        <div class="col-md-6 d-flex gap-2 justify-content-end pt-2">
+          <button class="btn btn-outline-info btn-sm" onclick="abrirModalServicos()">Serviços pré-def.</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="adicionarFrete()">+ Frete</button>
+          <button class="btn btn-warning btn-sm d-none" id="btnCancelarEdicao" onclick="cancelarEdicaoItem()">Cancelar</button>
+          <button class="btn btn-success" id="btnAddItem" onclick="adicionarItem()">➕ Adicionar Item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de itens -->
+    <div class="form-section p-0">
+      <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+        <h6 class="mb-0">📋 Itens do Orçamento</h6>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="text-muted" style="font-size:.82rem" id="resumoItens">0 itens · 0,00 m²</span>
+          <button class="btn btn-sm btn-outline-danger" onclick="removerItemSelecionado()" id="btnRemover" disabled>Remover</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0" id="itensTable">
+          <thead>
+            <tr>
+              <th>Ambiente</th><th>Descrição</th><th>Material</th>
+              <th class="text-center">QTD</th><th class="text-center">ML</th>
+              <th class="text-center">Preço/ML</th><th class="text-center">Área m²</th>
+              <th class="text-center">Valor/m²</th><th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody id="itensBody"></tbody>
+        </table>
+      </div>
+      <div class="total-bar mx-3 mb-3">
+        <div>
+          <div class="label">Total Geral</div>
+        </div>
+        <div class="value" id="totalGeral">R$ 0,00</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Materiais -->
+<div class="modal fade" id="modalMateriais" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Selecionar Material</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="text" id="filtroMaterial" class="form-control mb-3" placeholder="Filtrar...">
+        <div style="max-height:320px;overflow-y:auto">
+          <table class="table table-sm table-hover" id="tabelaMateriais">
+            <thead><tr><th>Material</th><th class="text-end">R$/m²</th></tr></thead>
+            <tbody id="bodyMateriais"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Serviços -->
+<div class="modal fade" id="modalServicos" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Serviços Pré-definidos</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div style="max-height:320px;overflow-y:auto">
+          <table class="table table-sm table-hover">
+            <thead><tr><th>Serviço</th><th>Tipo</th><th class="text-end">Preço</th></tr></thead>
+            <tbody id="bodyServicos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container">
+  <div id="toast" class="toast align-items-center text-white border-0">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMsg"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toast').classList.remove('show')"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+requireAuth();
+document.getElementById("sidebarUser").textContent = getUsername();
+
+let itens = [];
+let editandoIdx = -1;
+let orcId = null;
+let clientes = [];
+let materiais = [];
+let servicos = [];
+
+// Carregar dados iniciais
+async function inicializar() {
+  const [ambData, matData, srvData, cliData] = await Promise.all([
+    apiFetch("/ambientes"),
+    apiFetch("/materiais"),
+    apiFetch("/servicos"),
+    apiFetch("/clientes"),
+  ]);
+
+  // Ambientes
+  const sel = document.getElementById("inAmbiente");
+  (ambData || []).forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.nome; opt.textContent = a.nome;
+    sel.appendChild(opt);
+  });
+
+  materiais = matData || [];
+  servicos = srvData || [];
+  clientes = cliData || [];
+
+  // Data padrão
+  document.getElementById("inData").value = today();
+
+  // Verifica se é edição
+  const params = new URLSearchParams(window.location.search);
+  orcId = params.get("id");
+  if (orcId) {
+    carregarOrcamento(parseInt(orcId));
+  }
+}
+
+async function carregarOrcamento(id) {
+  try {
+    const data = await apiFetch(`/orcamentos/${id}`);
+    document.getElementById("pageTitle").textContent = `✏️ Editando Orçamento #${String(data.numero||id).padStart(3,"0")}`;
+    document.getElementById("inCliente").value = data.cliente || "";
+    document.getElementById("inData").value = data.data || "";
+    document.getElementById("inEndereco").value = data.endereco || "";
+    document.getElementById("inMostrarNota").checked = data.mostrar_nota !== false;
+    document.getElementById("rtPct").value = data.rt_pct || 0;
+
+    const pagSel = document.getElementById("inPagamento");
+    for (let opt of pagSel.options) {
+      if (opt.value === data.forma_pagamento) { pagSel.value = opt.value; break; }
+    }
+
+    itens = data.itens_json || [];
+    renderItens();
+    document.getElementById("btnPdf").disabled = false;
+    document.getElementById("btnExcel").disabled = false;
+  } catch (e) {
+    showToast("Erro ao carregar: " + e.message, "error");
+  }
+}
+
+// Autocomplete clientes
+const inCliente = document.getElementById("inCliente");
+const autoList = document.getElementById("autocompleteCliente");
+
+inCliente.addEventListener("input", function() {
+  const q = this.value.toLowerCase().trim();
+  autoList.innerHTML = "";
+  if (!q) { autoList.classList.add("d-none"); return; }
+  const matches = clientes.filter(c => c.nome.toLowerCase().includes(q));
+  if (!matches.length) { autoList.classList.add("d-none"); return; }
+  matches.slice(0, 6).forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = c.nome;
+    li.addEventListener("click", () => {
+      inCliente.value = c.nome;
+      document.getElementById("inEndereco").value = c.endereco || "";
+      autoList.classList.add("d-none");
+    });
+    autoList.appendChild(li);
+  });
+  autoList.classList.remove("d-none");
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest(".position-relative")) autoList.classList.add("d-none");
+});
+
+// Cálculo de total em tempo real
+["inComp","inLarg","inArea","inValorM2","inMl","inPrecoMl","inValorFixo","inQtd"].forEach(id => {
+  document.getElementById(id).addEventListener("input", calcularTotal);
+});
+
+function calcularTotal() {
+  const qtd = parseFloat(document.getElementById("inQtd").value) || 1;
+  const comp = parseFloat(document.getElementById("inComp").value) || 0;
+  const larg = parseFloat(document.getElementById("inLarg").value) || 0;
+  const areaManual = parseFloat(document.getElementById("inArea").value) || 0;
+  const valorM2 = parseFloat(document.getElementById("inValorM2").value) || 0;
+  const ml = parseFloat(document.getElementById("inMl").value) || 0;
+  const precoMl = parseFloat(document.getElementById("inPrecoMl").value) || 0;
+  const valorFixo = parseFloat(document.getElementById("inValorFixo").value) || 0;
+
+  const area = (comp > 0 && larg > 0) ? comp * larg : areaManual;
+  const total = qtd * (area * valorM2 + ml * precoMl + valorFixo);
+  document.getElementById("inTotalCalc").value = formatBRL(total);
+  return { qtd, comp, larg, area, valorM2, ml, precoMl, valorFixo, total };
+}
+
+function adicionarItem() {
+  const ambiente = document.getElementById("inAmbiente").value;
+  const descricao = document.getElementById("inDescricao").value.trim();
+  if (!ambiente) { showToast("Selecione um ambiente", "warning"); return; }
+  if (!descricao) { showToast("Informe a descrição", "warning"); return; }
+
+  const vals = calcularTotal();
+  if (vals.total === 0) { showToast("Informe valores para calcular o total", "warning"); return; }
+
+  const rt = parseFloat(document.getElementById("rtPct").value) || 0;
+  const item = {
+    ambiente,
+    descricao,
+    material: document.getElementById("inMaterial").value.trim() || "-",
+    qtd: vals.qtd,
+    comp: vals.comp,
+    larg: vals.larg,
+    area: vals.area,
+    valor_m2: vals.valorM2,
+    valor_m2_base: vals.valorM2,
+    ml: vals.ml,
+    preco_ml: vals.precoMl,
+    preco_ml_base: vals.precoMl,
+    valor_fixo: vals.valorFixo,
+    valor_fixo_base: vals.valorFixo,
+    total: vals.total,
+    ocultar_valor_pdf: document.getElementById("inOcultarPdf").checked,
+  };
+
+  if (editandoIdx >= 0) {
+    itens[editandoIdx] = item;
+    editandoIdx = -1;
+    document.getElementById("tituloFormItem").textContent = "Adicionar Item";
+    document.getElementById("btnAddItem").textContent = "➕ Adicionar Item";
+    document.getElementById("btnCancelarEdicao").classList.add("d-none");
+  } else {
+    itens.push(item);
+  }
+
+  aplicarRT();
+  limparCamposItem();
+}
+
+function aplicarRT() {
+  const rt = parseFloat(document.getElementById("rtPct").value) || 0;
+  if (rt <= 0) {
+    itens.forEach(item => {
+      item.valor_m2 = item.valor_m2_base || item.valor_m2;
+      item.preco_ml = item.preco_ml_base || item.preco_ml;
+      item.valor_fixo = item.valor_fixo_base || item.valor_fixo;
+      recalcItem(item);
+    });
+  } else {
+    // Calcula área total m² e total base
+    let areaTotal = 0, totalBase = 0;
+    itens.forEach(item => {
+      const area = parseFloat(item.area) || 0;
+      const vm2 = parseFloat(item.valor_m2_base || item.valor_m2) || 0;
+      const ml = parseFloat(item.ml) || 0;
+      const pml = parseFloat(item.preco_ml_base || item.preco_ml) || 0;
+      const vfix = parseFloat(item.valor_fixo_base || item.valor_fixo) || 0;
+      if (area > 0 && vm2 > 0) { totalBase += area * vm2; areaTotal += area; }
+      else if (ml > 0 && pml > 0) totalBase += ml * pml;
+      else totalBase += vfix * (item.qtd || 1);
+    });
+
+    if (areaTotal > 0) {
+      const acrescimoPorM2 = (totalBase * rt / 100) / areaTotal;
+      itens.forEach(item => {
+        const area = parseFloat(item.area) || 0;
+        const vm2base = parseFloat(item.valor_m2_base || item.valor_m2) || 0;
+        if (area > 0 && vm2base > 0) {
+          item.valor_m2 = vm2base + acrescimoPorM2;
+        }
+        recalcItem(item);
+      });
+    }
+  }
+  renderItens();
+}
+
+function recalcItem(item) {
+  const qtd = parseFloat(item.qtd) || 1;
+  const area = parseFloat(item.area) || 0;
+  const ml = parseFloat(item.ml) || 0;
+  item.total = qtd * (
+    area * (parseFloat(item.valor_m2) || 0) +
+    ml * (parseFloat(item.preco_ml) || 0) +
+    (parseFloat(item.valor_fixo) || 0)
+  );
+}
+
+document.getElementById("rtPct").addEventListener("change", aplicarRT);
+
+function renderItens() {
+  const tbody = document.getElementById("itensBody");
+  tbody.innerHTML = "";
+  let totalGeral = 0;
+  let totalArea = 0;
+
+  itens.forEach((item, idx) => {
+    const tr = document.createElement("tr");
+    tr.dataset.idx = idx;
+    tr.addEventListener("click", () => selecionarItem(idx, tr));
+    const fmt = v => (parseFloat(v) > 0) ? parseFloat(v).toFixed(2).replace(".",",") : "-";
+    tr.innerHTML = `
+      <td>${item.ambiente}</td>
+      <td>${item.descricao}</td>
+      <td style="font-size:.82rem">${item.material||"-"}</td>
+      <td class="text-center">${parseFloat(item.qtd||1).toFixed(0)}</td>
+      <td class="text-center">${fmt(item.ml)}</td>
+      <td class="text-center">${fmt(item.preco_ml)}</td>
+      <td class="text-center">${fmt(item.area)}</td>
+      <td class="text-center">${fmt(item.valor_m2)}</td>
+      <td class="text-end fw-bold">${formatBRL(item.total)}</td>
+    `;
+    tbody.appendChild(tr);
+    totalGeral += parseFloat(item.total) || 0;
+    totalArea += parseFloat(item.area) || 0;
+  });
+
+  document.getElementById("totalGeral").textContent = formatBRL(totalGeral);
+  document.getElementById("resumoItens").textContent =
+    `${itens.length} iten(s) · ${totalArea.toFixed(2).replace(".",",")} m²`;
+}
+
+let itemSelecionadoIdx = -1;
+function selecionarItem(idx, tr) {
+  document.querySelectorAll("#itensBody tr").forEach(r => r.classList.remove("selected-row"));
+  if (itemSelecionadoIdx === idx) {
+    itemSelecionadoIdx = -1;
+    document.getElementById("btnRemover").disabled = true;
+    return;
+  }
+  tr.classList.add("selected-row");
+  itemSelecionadoIdx = idx;
+  document.getElementById("btnRemover").disabled = false;
+  carregarItemParaEdicao(idx);
+}
+
+function carregarItemParaEdicao(idx) {
+  const item = itens[idx];
+  editandoIdx = idx;
+  document.getElementById("inAmbiente").value = item.ambiente;
+  document.getElementById("inDescricao").value = item.descricao;
+  document.getElementById("inMaterial").value = item.material || "";
+  document.getElementById("inQtd").value = item.qtd || 1;
+  document.getElementById("inComp").value = item.comp > 0 ? item.comp : "";
+  document.getElementById("inLarg").value = item.larg > 0 ? item.larg : "";
+  document.getElementById("inArea").value = item.area > 0 && !(item.comp > 0 && item.larg > 0) ? item.area : "";
+  document.getElementById("inValorM2").value = (item.valor_m2_base||item.valor_m2) > 0 ? (item.valor_m2_base||item.valor_m2) : "";
+  document.getElementById("inMl").value = item.ml > 0 ? item.ml : "";
+  document.getElementById("inPrecoMl").value = item.preco_ml > 0 ? item.preco_ml : "";
+  document.getElementById("inValorFixo").value = item.valor_fixo > 0 ? item.valor_fixo : "";
+  document.getElementById("inOcultarPdf").checked = item.ocultar_valor_pdf || false;
+  document.getElementById("tituloFormItem").textContent = "Editando Item";
+  document.getElementById("btnAddItem").textContent = "✔ Atualizar Item";
+  document.getElementById("btnCancelarEdicao").classList.remove("d-none");
+  calcularTotal();
+}
+
+function cancelarEdicaoItem() {
+  editandoIdx = -1;
+  itemSelecionadoIdx = -1;
+  document.querySelectorAll("#itensBody tr").forEach(r => r.classList.remove("selected-row"));
+  document.getElementById("tituloFormItem").textContent = "Adicionar Item";
+  document.getElementById("btnAddItem").textContent = "➕ Adicionar Item";
+  document.getElementById("btnCancelarEdicao").classList.add("d-none");
+  document.getElementById("btnRemover").disabled = true;
+  limparCamposItem();
+}
+
+function removerItemSelecionado() {
+  if (itemSelecionadoIdx < 0) return;
+  itens.splice(itemSelecionadoIdx, 1);
+  itemSelecionadoIdx = -1;
+  editandoIdx = -1;
+  document.getElementById("btnRemover").disabled = true;
+  document.getElementById("tituloFormItem").textContent = "Adicionar Item";
+  document.getElementById("btnAddItem").textContent = "➕ Adicionar Item";
+  document.getElementById("btnCancelarEdicao").classList.add("d-none");
+  aplicarRT();
+  limparCamposItem();
+}
+
+function limparCamposItem() {
+  ["inDescricao","inMaterial","inComp","inLarg","inArea","inValorM2",
+   "inMl","inPrecoMl","inValorFixo","inTotalCalc"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("inQtd").value = "1";
+  document.getElementById("inOcultarPdf").checked = false;
+}
+
+function novoOrcamento() {
+  if (itens.length && !confirm("Descartar orçamento atual e começar novo?")) return;
+  itens = [];
+  orcId = null;
+  editandoIdx = -1;
+  document.getElementById("inCliente").value = "";
+  document.getElementById("inEndereco").value = "";
+  document.getElementById("inData").value = today();
+  document.getElementById("inPagamento").value = "A definir";
+  document.getElementById("inMostrarNota").checked = true;
+  document.getElementById("rtPct").value = "0";
+  document.getElementById("pageTitle").textContent = "🧾 Novo Orçamento";
+  document.getElementById("btnPdf").disabled = true;
+  document.getElementById("btnExcel").disabled = true;
+  renderItens();
+  limparCamposItem();
+  history.replaceState(null, "", "/orcamento.html");
+}
+
+async function salvarOrcamento() {
+  const cliente = document.getElementById("inCliente").value.trim();
+  const data = document.getElementById("inData").value.trim();
+  if (!cliente) { showToast("Informe o nome do cliente", "warning"); return; }
+  if (!data) { showToast("Informe a data", "warning"); return; }
+  if (!itens.length) { showToast("Adicione ao menos um item", "warning"); return; }
+
+  const payload = {
+    cliente,
+    data,
+    endereco: document.getElementById("inEndereco").value.trim(),
+    forma_pagamento: document.getElementById("inPagamento").value,
+    mostrar_nota: document.getElementById("inMostrarNota").checked,
+    rt_pct: parseFloat(document.getElementById("rtPct").value) || 0,
+    itens,
+  };
+
+  try {
+    if (orcId) {
+      await apiFetch(`/orcamentos/${orcId}`, { method: "PUT", body: JSON.stringify(payload) });
+      showToast("Orçamento atualizado!");
+    } else {
+      const res = await apiFetch("/orcamentos", { method: "POST", body: JSON.stringify(payload) });
+      orcId = res.id;
+      document.getElementById("pageTitle").textContent = `✏️ Editando Orçamento #${String(res.numero).padStart(3,"0")}`;
+      history.replaceState(null, "", `/orcamento.html?id=${orcId}`);
+      showToast("Orçamento salvo com sucesso!");
+    }
+    document.getElementById("btnPdf").disabled = false;
+    document.getElementById("btnExcel").disabled = false;
+  } catch (e) {
+    showToast("Erro ao salvar: " + e.message, "error");
+  }
+}
+
+async function gerarPdf() {
+  if (!orcId) { await salvarOrcamento(); if (!orcId) return; }
+  try {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/orcamentos/${orcId}/pdf`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Erro ao gerar PDF");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (e) { showToast(e.message, "error"); }
+}
+
+async function gerarExcel() {
+  if (!orcId) { await salvarOrcamento(); if (!orcId) return; }
+  try {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/orcamentos/${orcId}/excel`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Erro ao gerar Excel");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `orcamento_${orcId}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { showToast(e.message, "error"); }
+}
+
+function adicionarFrete() {
+  const val = prompt("Valor do frete (R$):");
+  if (!val) return;
+  const valor = parseFloat(val.replace(",","."));
+  if (isNaN(valor) || valor <= 0) { showToast("Valor inválido","warning"); return; }
+  itens.push({
+    ambiente:"FRETE", descricao:"FRETE", material:"-",
+    qtd:1, comp:0, larg:0, area:0,
+    valor_m2:0, valor_m2_base:0,
+    ml:0, preco_ml:0, preco_ml_base:0,
+    valor_fixo:valor, valor_fixo_base:valor,
+    total:valor, ocultar_valor_pdf:false
+  });
+  renderItens();
+}
+
+// Modal Materiais
+function abrirModalMateriais() {
+  const tbody = document.getElementById("bodyMateriais");
+  tbody.innerHTML = "";
+  const filtro = document.getElementById("filtroMaterial").value.toLowerCase();
+  materiais.filter(m => !filtro || m.nome.toLowerCase().includes(filtro)).forEach(m => {
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.innerHTML = `<td>${m.nome}</td><td class="text-end">${formatBRL(m.preco)}</td>`;
+    tr.addEventListener("click", () => {
+      document.getElementById("inMaterial").value = m.nome;
+      document.getElementById("inValorM2").value = m.preco;
+      calcularTotal();
+      bootstrap.Modal.getInstance(document.getElementById("modalMateriais")).hide();
+    });
+    tbody.appendChild(tr);
+  });
+  new bootstrap.Modal(document.getElementById("modalMateriais")).show();
+}
+
+document.getElementById("filtroMaterial").addEventListener("input", function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll("#bodyMateriais tr").forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+});
+
+// Modal Serviços
+function abrirModalServicos() {
+  const tbody = document.getElementById("bodyServicos");
+  tbody.innerHTML = "";
+  servicos.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.innerHTML = `<td>${s.nome}</td><td>${s.tipo==="ml"?"ML":"Fixo"}</td><td class="text-end">${formatBRL(s.preco)}</td>`;
+    tr.addEventListener("click", () => {
+      document.getElementById("inDescricao").value = s.nome;
+      document.getElementById("inMaterial").value = "-";
+      document.getElementById("inQtd").value = "1";
+      if (s.tipo === "ml") {
+        document.getElementById("inPrecoMl").value = s.preco;
+        document.getElementById("inValorFixo").value = "";
+      } else {
+        document.getElementById("inValorFixo").value = s.preco;
+        document.getElementById("inPrecoMl").value = "";
+      }
+      calcularTotal();
+      bootstrap.Modal.getInstance(document.getElementById("modalServicos")).hide();
+    });
+    tbody.appendChild(tr);
+  });
+  new bootstrap.Modal(document.getElementById("modalServicos")).show();
+}
+
+inicializar();
+</script>
+</body>
+</html>
