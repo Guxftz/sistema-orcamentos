@@ -58,20 +58,20 @@ def gerar_pdf_orcamento(
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_img = None
+    logo_data = None
     if logo_base64:
         try:
-            from reportlab.lib.utils import ImageReader
-            img_data = base64.b64decode(logo_base64)
-            logo_img = ImageReader(io.BytesIO(img_data))
+            logo_data = base64.b64decode(logo_base64)
         except Exception:
-            logo_img = None
+            logo_data = None
 
     def desenhar_cabecalho(completo=True):
         topo = altura - 20 * mm
 
-        if logo_img:
+        if logo_data:
             try:
+                from reportlab.lib.utils import ImageReader
+                logo_img = ImageReader(io.BytesIO(logo_data))
                 logo_larg = 70 * mm
                 logo_alt = 30 * mm
                 x_logo = 20 * mm
@@ -370,19 +370,19 @@ def gerar_pdf_montador(nome_cliente, data_orcamento, itens, total_geral, logo_ba
     c = canvas.Canvas(buffer, pagesize=A4)
     largura, altura = A4
 
-    logo_img = None
+    logo_data_m = None
     if logo_base64:
         try:
-            from reportlab.lib.utils import ImageReader
-            img_data = base64.b64decode(logo_base64)
-            logo_img = ImageReader(io.BytesIO(img_data))
+            logo_data_m = base64.b64decode(logo_base64)
         except Exception:
-            logo_img = None
+            logo_data_m = None
 
     def cabecalho():
         y = altura - 15 * mm
-        if logo_img:
+        if logo_data_m:
             try:
+                from reportlab.lib.utils import ImageReader
+                logo_img = ImageReader(io.BytesIO(logo_data_m))
                 c.drawImage(logo_img, 15 * mm, y - 18 * mm,
                             width=40 * mm, height=18 * mm,
                             preserveAspectRatio=True, mask="auto")
