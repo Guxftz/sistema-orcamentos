@@ -31,7 +31,6 @@
   </div>
 </div>
 
-<div id="v8banner" style="background:#dc3545;color:#fff;text-align:center;padding:6px;font-weight:bold;font-size:13px">VERSÃO NOVA (v8) — SE APARECER PODE APAGAR</div>
 <div class="main-content">
   <div class="top-bar">
     <h5>📊 Dashboard</h5>
@@ -125,15 +124,8 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  alert("v10 JS rodou - token: " + (localStorage.getItem("token") ? "SIM" : "NAO"));
-  window.onerror = function(msg, src, line, col, err) {
-    document.getElementById("tabelaOrc").innerHTML =
-      '<tr><td colspan="6" class="text-danger py-3"><b>ERRO JS:</b> ' + msg + ' (linha ' + line + ')</td></tr>';
-  };
-
   requireAuth();
   document.getElementById("sidebarUser").textContent = getUsername();
-  document.getElementById("tabelaOrc").innerHTML = '<tr><td colspan="6" class="text-center text-info py-2">v9 — JS rodou, chamando API...</td></tr>';
 
   let todosOrc = [];
   let excluirId = null;
@@ -194,7 +186,7 @@
           <button class="btn btn-sm btn-outline-primary me-1" onclick="editarOrc(${o.id})" title="Editar">✏️</button>
           <button class="btn btn-sm btn-outline-success me-1" onclick="downloadPdf(${o.id})" title="PDF">📄</button>
           <button class="btn btn-sm btn-outline-secondary me-1" onclick="downloadExcel(${o.id})" title="Excel">📊</button>
-          <button class="btn btn-sm btn-outline-danger" onclick="confirmarExcluir(${o.id}, '${(o.cliente||"").replace(/'/g,""")}')" title="Excluir">🗑️</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="confirmarExcluir(${o.id}, '${(o.cliente||"").replace(/'/g,"")}')" title="Excluir">🗑️</button>
         </td>
       `;
       tbody.appendChild(tr);
