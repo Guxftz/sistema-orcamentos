@@ -125,10 +125,14 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script>
+  window.onerror = function(msg, src, line, col, err) {
+    document.getElementById("tabelaOrc").innerHTML =
+      '<tr><td colspan="6" class="text-danger py-3"><b>ERRO JS:</b> ' + msg + ' (linha ' + line + ')</td></tr>';
+  };
+
   requireAuth();
   document.getElementById("sidebarUser").textContent = getUsername();
-  // marcador de versão — remove após confirmar que o novo código carregou
-  document.getElementById("tabelaOrc").innerHTML = '<tr><td colspan="6" class="text-center text-info py-2">v7 — aguardando dados...</td></tr>';
+  document.getElementById("tabelaOrc").innerHTML = '<tr><td colspan="6" class="text-center text-info py-2">v9 — JS rodou, chamando API...</td></tr>';
 
   let todosOrc = [];
   let excluirId = null;
@@ -255,7 +259,10 @@
     } catch (e) { showToast(e.message, "error"); }
   });
 
-  carregarDados();
+  carregarDados().catch(function(e) {
+    document.getElementById("tabelaOrc").innerHTML =
+      '<tr><td colspan="6" class="text-danger py-3"><b>ERRO FATAL:</b> ' + e.message + '</td></tr>';
+  });
 </script>
 </body>
 </html>
